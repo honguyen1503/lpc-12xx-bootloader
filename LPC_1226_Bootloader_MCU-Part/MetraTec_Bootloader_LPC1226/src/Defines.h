@@ -20,6 +20,8 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEAL
 #ifndef DEFINES_H_
 #define DEFINES_H_
 
+#define START_BOOTLOADER_ON_IIII 1
+
 #include "stdint.h"
 
 typedef uint8_t 	u8;

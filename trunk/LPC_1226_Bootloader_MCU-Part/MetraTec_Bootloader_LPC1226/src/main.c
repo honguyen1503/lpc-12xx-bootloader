@@ -58,25 +58,30 @@ int main(void)
 		)
 
 	{
-//		u32 dwStartUpClock=dwClockValue+50;
-//		while (dwClockValue<dwStartUpClock)
-//		{
-//			if (dwNumberOfInputByte)
-//			{
-//				if (mInputBytes[0]=='i')
-//				{
-//					UartSendByte('L');
-//					delay_ms(10);
-//					dwNumberOfInputByte=0;
-//					dwStartUpClock=0;
-//					break;
-//				}
-//				else
-//					dwNumberOfInputByte=0;
-//			}
-//		}
-//		if (dwStartUpClock)
-//		{
+#if START_BOOTLOADER_ON_IIII
+		SysTick_Config(SystemCoreClock / 1000);		//set systick to 1ms
+		bInterruptDisableCounter=0;					//reset counter for nested DISABLE IRQ
+		__enable_irq();								//enable irqs
+		u32 dwStartUpClock=dwClockValue+50;
+		while (dwClockValue<dwStartUpClock)
+		{
+			if (dwNumberOfInputByte)
+			{
+				if (mInputBytes[0]=='i')
+				{
+					UartSendByte('L');
+					delay_ms(10);
+					dwNumberOfInputByte=0;
+					dwStartUpClock=0;
+					break;
+				}
+				else
+					dwNumberOfInputByte=0;
+			}
+		}
+		if (dwStartUpClock)
+		{
+#endif
 			__disable_irq();
 			/* Valid application located in the next sector(s) of flash so execute */
 
@@ -91,20 +96,22 @@ int main(void)
 			asm volatile("ldr r0, =0x2004");
 			asm volatile("ldr r0, [r0]");
 			asm volatile("mov pc, r0");
-//		}
+#if START_BOOTLOADER_ON_IIII
+		}
+#endif
 	}
 
 
 	UARTInit(115200);							//initializes Uart to 115200Baud
-//	SysTick_Config(SystemCoreClock / 1000);		//set systick to 1ms
-//	bInterruptDisableCounter=0;					//reset counter for nested DISABLE IRQ
-//	__enable_irq();								//enable irqs
+
 	InitCRC();
 	InitAES();
-
+#if !START_BOOTLOADER_ON_IIII
+	SysTick_Config(SystemCoreClock / 1000);		//set systick to 1ms
+	bInterruptDisableCounter=0;					//reset counter for nested DISABLE IRQ
+	__enable_irq();								//enable irqs
+#endif
 	while(1)
-	{
 		Parser();
-	}
 	return 0;
 }

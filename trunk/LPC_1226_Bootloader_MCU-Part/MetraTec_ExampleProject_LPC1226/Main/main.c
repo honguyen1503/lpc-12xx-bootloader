@@ -18,7 +18,7 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEAL
 */
 
 #include <cr_section_macros.h>
-__BSS(RESERVED) char ISR_Buffer[0xC0] ; // reserve 256 bytes for CAN driver
+__BSS(RESERVED) char ISR_Buffer[0x100] ; // reserve 0x100 bytes for ISR pointer in RAM
 #include "GlobalIncludes.h"
 
 
@@ -32,20 +32,21 @@ __attribute__ ((section(".fwparam"))) const tFirmwareParamFlash udtFirmwareParam
 		0xFFFFFFFF,
 		0xFFFFFFFF
 };
+tBootloaderParamFlash udtBootloaderParamFlash;
 
 int main(void)
 {
 	__disable_irq();
-	*((u32*)(0x10000000 + 0x1FE4))=0;			//Reset Bootloader Variable
 	LPC_SYSCON->SYSAHBCLKCTRL |= 0xE001005FUL;	//Systems activated
-	memcpy(ISR_Buffer,(u8*)0x2000,0xc0);		//Copy ISR to RAM
-	LPC_SYSCON->SYSMEMREMAP=0x01;				//Activate ISR in RAM
+	LPC_SYSCON->SYSMEMREMAP=0x02;				//Activate ISR in Flash, remapping is inactive
+	memcpy(&udtBootloaderParamFlash,(void*)0x100,sizeof(tBootloaderParamFlash));	//copy from flash now possible because of deactivated remapping
+	LPC_SYSCON->SYSMEMREMAP=0x01;				//Re-Activate ISR in RAM
+	*((u32*)(0x10000000 + 0x1FE4))=0;			//Reset Bootloader Variable
 	bInterruptDisableCounter=0;
 	UARTInit(115200);
 	__enable_irq();								//Enable ISR
+
 	InitFreeGlobalTimer();
-	delay_ms(5);
-	UartSendByte('*',0);
 	while(1)
 	{
 		if (udtUartReceiveBuffer.xPacketAvailable)

@@ -356,8 +356,8 @@ ResetISR(void) {
 
 	extern void *memcpy(void * restrict __s1,
 	                   const void * restrict __s2, size_t __n);
-	extern char ISR_Buffer[0xC0];
-	memcpy((void*)ISR_Buffer,(void*)0x2000,0xc0);
+	extern char ISR_Buffer[0x100];
+	memcpy((void*)ISR_Buffer,(void*)0x2000,0x100);
 	LPC_SYSCON->SYSMEMREMAP=0x01;
 
 #if defined (__cplusplus)

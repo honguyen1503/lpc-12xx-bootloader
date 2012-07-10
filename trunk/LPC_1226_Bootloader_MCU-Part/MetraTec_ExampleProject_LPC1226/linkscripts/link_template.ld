@@ -43,7 +43,7 @@ SECTIONS
 	{
 		FILL(0xff)
 		KEEP(*(.isr_vector))
-		. = 0xC0;
+		. = 0x100;
 		_fwparam = .;
 		KEEP(*(.fwparam)) 
 		

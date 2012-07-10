@@ -22,8 +22,6 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEAL
 
 //define answer signs
 
-#define USED_UART 0
-
 #define IER_RBR         (0x01<<0)
 #define IER_THRE        (0x01<<1)
 #define IER_RLS         (0x01<<2)
@@ -53,13 +51,11 @@ extern volatile u8 mInputBytes[300];
 #define CRCMODE_UARTCOMM_EXCL_END 1
 
 void UARTInit(uint32_t Baudrate);
-void UART1_IRQHandler(void);
 void UARTSend(uint32_t portNum, uint8_t *BufferPtr, uint32_t Length);
 
 void ISR_UartRX (void);
 #define SendNewline() UartSendByte(13);																		/*Empties the Uart Hardware Receive Buffer*/
 void UartSendByte ( u8 bData );
-void CommSendDec ( u32 dwData, u8 bMinLength );
 void UartSendBuffer ( const u8* const mData, const u8 bLength );
 u8 Byte4ToHex ( u8 bData );
 void sendU32Hex(u32 sendByte);

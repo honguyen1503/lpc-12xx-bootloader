@@ -34,7 +34,7 @@ u8 bInterruptDisableCounter=0;
 __attribute__ ((section(".btlparam"))) tBootloaderParamFlash udtBootloaderParamFlash=
 {
 	"LPC1226_8kB     ",
-	"0005",
+	"0010",
 	{0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF},
 	{0xFF,0xFF,0xFF,0xFF},
 	{0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF}
@@ -45,24 +45,32 @@ int main(void)
 	LPC_SYSCON->SYSAHBCLKCTRL |= 0xE001005FUL;	//set system control variable
 	LPC_SYSCON->SYSMEMREMAP=0x02;				//set Interrupt Service Routines to Flash (address 0x00000000)
 
+	InitCRC();
+	SysTick_Config(SystemCoreClock / 1000);		//set systick to 1ms
 
-	u32 dwBootloader=*(u32*)(0x10000000 + 0x1FE4);
-	*(u32*)(0x10000000 + 0x1FE4)=0;
-
+	Bool xStartBootloader=FALSE;
 	if (
-			(*((u32*)pStartOfApplicationCode)!=0xFFFFFFFFUL)
-			&&
-			(dwBootloader!=0xB00410AD)
-			&&
-			checkFirmwareCrc()
+			(*((u32*)pStartOfApplicationCode)==0xFFFFFFFFUL)
+			||
+			((*(u32*)(0x10000000 + 0x1FE4))==0xB00410AD)
+			||
+			(FLASHPARAM_FirmwareData->dwFirmwareSizeBytes>TOTAL_FLASHSIZE-((u32)(pStartOfApplicationCode)))
 		)
+		xStartBootloader=TRUE;
+	else if (FALSE==checkFirmwareCrc())	//only check CRC if the other conditions are false so no empty firmware or to long data is checked
+		xStartBootloader=TRUE;
+	*(u32*)(0x10000000 + 0x1FE4)=0;		//reset bootloader ram flag
 
+	if (FALSE==xStartBootloader)
 	{
 #if START_BOOTLOADER_ON_IIII
-		SysTick_Config(SystemCoreClock / 1000);		//set systick to 1ms
+		UARTInit(115200);
 		bInterruptDisableCounter=0;					//reset counter for nested DISABLE IRQ
 		__enable_irq();								//enable irqs
+
 		u32 dwStartUpClock=dwClockValue+50;
+		if (dwStartUpClock<50)
+			dwStartUpClock++;	//prevents value zero and makes it 50ms even in case of overrun
 		while (dwClockValue<dwStartUpClock)
 		{
 			if (dwNumberOfInputByte)
@@ -98,19 +106,17 @@ int main(void)
 			asm volatile("mov pc, r0");
 #if START_BOOTLOADER_ON_IIII
 		}
+		//else the code goes on meaning start bootloader
 #endif
 	}
+	if (!(START_BOOTLOADER_ON_IIII && (FALSE==xStartBootloader)))
+	{
+		UARTInit(115200);							//initializes Uart to 115200Baud
+		bInterruptDisableCounter=0;					//reset counter for nested DISABLE IRQ
+		__enable_irq();								//enable irqs
+	}
+	ExpandKey (mAES_Key, mExpandedKey);				//initialize the AES by expanding the key
 
-
-	UARTInit(115200);							//initializes Uart to 115200Baud
-
-	InitCRC();
-	InitAES();
-#if !START_BOOTLOADER_ON_IIII
-	SysTick_Config(SystemCoreClock / 1000);		//set systick to 1ms
-	bInterruptDisableCounter=0;					//reset counter for nested DISABLE IRQ
-	__enable_irq();								//enable irqs
-#endif
 	while(1)
 		Parser();
 	return 0;

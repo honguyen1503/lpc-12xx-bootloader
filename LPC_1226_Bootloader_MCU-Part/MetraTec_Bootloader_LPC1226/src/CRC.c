@@ -45,18 +45,12 @@ Bool checkFirmwareCrc(void)
 {
 	if ((FLASHPARAM_FirmwareData->dwFirmwareCrcInMet!=0xFFFFFFFF)&&(FLASHPARAM_FirmwareData->dwFirmwareCrcInMet==FLASHPARAM_FirmwareData->dwFirmwareCrcOnMcu))
 		return TRUE;
-//	else
-//	{
-//		sendU32Hex(FLASHPARAM_FirmwareData->dwFirmwareCrcInMet);SendNewline();
-//		sendU32Hex(FLASHPARAM_FirmwareData->dwFirmwareCrcOnMcu);SendNewline();
-//	}
 	/*
 	 * 	CRC of Code was not computed by now so it's the default (important value for program code to set it to 0xFFFFFFFF.
 	 * 	Just  using the same value is NOT sufficient because the flash must be writable!
 	 */
 	if (FLASHPARAM_FirmwareData->dwFirmwareCrcOnMcu==0xFFFFFFFF)
 	{
-		InitCRC();			//prepare Hardware CRC
 		u16 wCRC=0xFFFF;	//use preset value
 		u32 dwCRC;			//variable to set Crc to 4 Byte sized memory area
 		GetCRC_CCITT(		//get the CRC first part (pre CRC saving area)
@@ -71,8 +65,7 @@ Bool checkFirmwareCrc(void)
 				(FLASHPARAM_FirmwareData->dwFirmwareSizeBytes)-(((u32)pAfterCRC)-((u32)pStartOfApplicationCode)),	//length is the length of the whole code
 				&wCRC);																//the variable to get the start value from and to save the crc value to
 		dwCRC=wCRC;		//copy to 4Byte variable. THis is the smallest number of bytes to write afaik
-		writeFlash((u8*)&dwCRC,sizeof(FLASHPARAM_FirmwareData->dwFirmwareCrcOnMcu),(u8*)(&FLASHPARAM_FirmwareData->dwFirmwareCrcOnMcu));
-		delay_ms(5);
+		writeFlash((u8*)&dwCRC,sizeof(FLASHPARAM_FirmwareData->dwFirmwareCrcOnMcu),(u8*)(&(FLASHPARAM_FirmwareData->dwFirmwareCrcOnMcu)));
 		if (FLASHPARAM_FirmwareData->dwFirmwareCrcInMet==FLASHPARAM_FirmwareData->dwFirmwareCrcOnMcu)
 			return TRUE;
 	}

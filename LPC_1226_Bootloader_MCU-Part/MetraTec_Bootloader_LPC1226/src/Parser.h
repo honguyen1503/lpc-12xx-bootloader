@@ -20,6 +20,5 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEAL
 #ifndef PARSER_H_
 #define PARSER_H_
 
-void InitAES (void);
 void Parser(void);
 #endif /* PARSER_H_ */

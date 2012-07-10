@@ -31,10 +31,9 @@ void Parser(void)
 			SendErrorByCode(ecAcknowledge);
 			delay_ms(5);
 			NVIC_SystemReset();
-			//SCB->AIRCR=0x05FA0004;
 		}
 	}
-	else if (COMPARE_TO("BTL"))//Bootloader
+	else if (COMPARE_TO("BTL"))//call Bootloader
 	{
 		if (!CommCmpStrC(sEPY))//A parameter follows
 			SendErrorByCode(ecUnknownParameter);
@@ -44,12 +43,12 @@ void Parser(void)
 			delay_ms(10);
 			//hard restart mcu so it goes to boatloader
 			__disable_irq();
-			LPC_SYSCON->SYSMEMREMAP=0x02;
-			*(u32*)(0x10000000 + 0x1FE4)=0xB00410AD;
+			LPC_SYSCON->SYSMEMREMAP=0x02;				//Disable remapping to RAM
+			*(u32*)(0x10000000 + 0x1FE4)=0xB00410AD;	//Write Bootloader Flag to RAM
 			NVIC_SystemReset();
 		}
 	}
-	else if (COMPARE_TO("REV"))//FirmwareRevision
+	else if (COMPARE_TO("REV") || COMPARE_TO("FRV"))//FirmwareRevision
 	{
 		if (CommCmpStrC(sEPY))
 		{
@@ -59,28 +58,46 @@ void Parser(void)
 		else
 			SendErrorByCode(ecUnknownParameter);
 	}
-	else if (COMPARE_TO("RSN"))//Read Serial Number
+	else if (COMPARE_TO("RRV"))//	(Hardware) Requirement Revision
 	{
 		if (CommCmpStrC(sEPY))
 		{
-			CommSendBuf13(FLASHPARAM_BootloaderData->mSerialNumber,sizeof(FLASHPARAM_BootloaderData->mSerialNumber));
+			CommSendBuf(udtFirmwareParamFlash.mHW_Req_Name,sizeof(udtFirmwareParamFlash.mHW_Req_Name));
+			CommSendBuf13(udtFirmwareParamFlash.mHW_Req_Rev,sizeof(udtFirmwareParamFlash.mHW_Req_Rev));						/*Send Firmware Version via UART*/
 		}
+		else
+			SendErrorByCode(ecUnknownParameter);
+	}
+	else if (COMPARE_TO("HRV"))//read Hardware Revision
+	{
+		if (CommCmpStrC(sEPY))
+		{
+			CommSendBuf(udtBootloaderParamFlash.mHardwareName,sizeof(udtBootloaderParamFlash.mHardwareName));
+			CommSendBuf13(udtBootloaderParamFlash.mHardwareRevision,sizeof(udtBootloaderParamFlash.mHardwareRevision));
+		}
+		else
+			SendErrorByCode(ecUnknownParameter);
+	}
+	else if (COMPARE_TO("BRV"))
+	{
+		if (CommCmpStrC(sEPY))
+		{
+			CommSendBuf(udtBootloaderParamFlash.mBootloaderName,sizeof(udtBootloaderParamFlash.mBootloaderName));
+			CommSendBuf13(udtBootloaderParamFlash.mBootloaderRevision,sizeof(udtBootloaderParamFlash.mBootloaderRevision));						/*Send Firmware Version via UART*/
+		}
+		else
+			SendErrorByCode(ecUnknownParameter);
+	}
+	else if (COMPARE_TO("RSN"))//Read Serial Number
+	{
+		if (CommCmpStrC(sEPY))
+			CommSendBuf13(udtBootloaderParamFlash.mSerialNumber,sizeof(udtBootloaderParamFlash.mSerialNumber));
 		else
 			SendErrorByCode(ecUnknownParameter);
 
 	}
-	else if (COMPARE_TO("RHR"))//read Hardware Revision
-	{
-		if (CommCmpStrC(sEPY))
-		{
-			CommSendBuf13(FLASHPARAM_BootloaderData->mHardwareRevision,sizeof(FLASHPARAM_BootloaderData->mHardwareRevision));
-		}
-		else
-			SendErrorByCode(ecUnknownParameter);
-	}
 	else//no suitable command at all
-	{
 		SendErrorByCode(ecUnknownCommand);	//"UCO" anser
-	}
+
 	DeleteUartPacket();//delete the packet which called the parser
 }

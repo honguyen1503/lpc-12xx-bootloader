@@ -20,7 +20,7 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEAL
 #ifndef GLOBALDEFINES_H_
 #define GLOBALDEFINES_H_
 
-extern char ISR_Buffer[0xC0];
+//extern char ISR_Buffer[0x100];
 
 /* Bit values, BITx = 2^x. Used for Bit operations like if (var & BIT3), which is TRUE if bit3 of var is set or |=BIT6, which sets bit 6*/
 #define BIT0	0x01

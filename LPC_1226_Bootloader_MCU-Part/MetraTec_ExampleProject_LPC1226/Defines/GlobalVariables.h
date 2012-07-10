@@ -24,13 +24,9 @@ tUartSendBuffer udtUartSendBuffer;
 tUartReceiveBuffer udtUartReceiveBuffer;
 tTimerValues udtGlobalFreeTimerValue;	/*The structure containing all global values for the timers*/
 u8 bInterruptDisableCounter;
-extern u16 CRC_Check;
-extern volatile Bool xSendEOF;
-extern Bool xCRC_On;
 extern u8 bMetraTecAvrLib_HighestFuncInUse;
 
 extern const tFirmwareParamFlash udtFirmwareParamFlash;
-#define FLASHPARAM_BootloaderData ((tBootloaderParamFlash*)(0x00+0xC0))
-
+extern tBootloaderParamFlash udtBootloaderParamFlash;
 
 #endif /* GLOBALVARIABLES_H_ */

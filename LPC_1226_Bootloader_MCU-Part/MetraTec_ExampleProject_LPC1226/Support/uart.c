@@ -18,19 +18,7 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEAL
 */
 
 #include "../Defines/GlobalIncludes.h"
-volatile Bool xSendEOF=FALSE;
 volatile u8 bMaxFifoLevel=0;
-Bool xCRC_On=FALSE;
-u16 CRC_Check = 0xffff;
-
-static void GetUartCrc (u8 bStart,u8 bLength, u16* pCrc )
-{
-	u8 mBuffer[bLength];
-	copyDataFromReceiveRingBufferToBuffer(bStart,bLength,mBuffer,0);
-	GetCRC_CCITT(CRCMODE_UARTCOMM_INCL_END,mBuffer,bLength, pCrc);
-}
-
-
 /*
  * moves the pointer, regarding the overflow
  * pVariable is a pointer to an array element value. array[*pVariable] is the form of usage
@@ -415,36 +403,6 @@ void UartSendByte ( u8 bData, Bool xUseForCRC )
 {
 	DISABLE_GLOBAL_IRQ();
 
-	xSendEOF=TRUE;												/*if EOF (0x0A) is used it can be send (non-empty message)*/
-
- 	if(xCRC_On && xUseForCRC) 									/*CRC usage*/
- 	{
- 		if (bData != 13)										/*Not the end of line*/
- 		{
- 			UartCrcAdding_NONEND(bData);			/*add char to CRC value*/
- 		}
-		else													/*end of line*/
-		{
-			UartCrcAdding_END(' ');
-			UartSendByte(' ',FALSE);								/*add a space character*/
-
-			/*
-			 * 			the following four lines replace
-			 * 			CommSendHex((CRC_Check & 0xff00) >> 8);
-			 * 			CommSendHex(CRC_Check & 0x00ff);
-			 * 			so it can use the FALSE parameter
-			 * */
-
-			/*send the four CRC hex characters*/
-			UartSendByte(Byte4ToHex((u8)((u8)(((u16)(CRC_Check & 0xff00)) >> 8)>>4)),FALSE);
-			UartSendByte(Byte4ToHex((u8)((u8)(((u16)(CRC_Check & 0xff00)) >> 8)&0x0F)),FALSE);
-			UartSendByte(Byte4ToHex((u8)(((u8)(CRC_Check & 0x00ff))>>4)),FALSE);
-			UartSendByte(Byte4ToHex((u8)((u8)(CRC_Check & 0x00ff))&0x0F),FALSE);
-
-			CRC_Check = 0xffff;									/*reset the static variable*/
-		}
- 	} //End CRC function part*/
-
 	if (udtUartSendBuffer.dwLength==NumberOfElementsInArray(udtUartSendBuffer.mBuffer) -1) /*protection agains SendBufferOverflow*/
 	{
 		DeleteUartSendBuffer();
@@ -493,7 +451,6 @@ void DeleteUartReceiveBuffer (void)
 void DeleteUartSendBuffer (void)
 {
 	udtUartSendBuffer.dwLength = 0;
-	CRC_Check = 0xffff;
 }
 
 /*
@@ -645,51 +602,8 @@ void ISR_UartRX (void)
 		if (bData == 13) /*if end of packet */
 		{
 			CallTimedFunction(TimerUartReceive,0);
-			if (xCRC_On) /*Uart-CRC ON */
-			{
-				if (RingDiff(udtUartReceiveBuffer.bLastPacketStart,udtUartReceiveBuffer.bWrite) >= 4+5) /*length of new packet is at least 3 bytes + space+ 4 bytes crc in ascii code + 1byte <CR> */
-				{
-					u16 wCRC=0xFFFF;
-					GetUartCrc(udtUartReceiveBuffer.bLastPacketStart, RingDiff(udtUartReceiveBuffer.bLastPacketStart, udtUartReceiveBuffer.bWrite) - 5, &wCRC); /*all chars including the space, excluding CRC and <CR> */
-
-					//*****
-					u8 CRCIndex=udtUartReceiveBuffer.bWrite;
-					u16 CalCRC=0;
-					movePositionForwardInRecvRing(&CRCIndex,RECEIVEBUFFER_RINGSIZE-5);
-
-					for (u8 i=0;i<4;i++)
-					{
-						HexToByte4(udtUartReceiveBuffer.mBuffer+CRCIndex);
-						CalCRC<<=4;
-						CalCRC+=udtUartReceiveBuffer.mBuffer[CRCIndex];
-						movePositionForwardInRecvRing(&CRCIndex,1);
-					}
-					//*******
-					if (wCRC == CalCRC)
-					{
-						movePositionForwardInRecvRing(&udtUartReceiveBuffer.bWrite,RECEIVEBUFFER_RINGSIZE-6); /* moves back by 6 (space, CRC, <CR> ) */
-						udtUartReceiveBuffer.mBuffer[udtUartReceiveBuffer.bWrite]=13;
-						movePositionForwardInRecvRing(&udtUartReceiveBuffer.bWrite,1);
-						udtUartReceiveBuffer.xPacketAvailable=TRUE;
-						udtUartReceiveBuffer.bLastPacketStart=udtUartReceiveBuffer.bWrite;
-					}
-					else
-					{
-						udtUartReceiveBuffer.bWrite = udtUartReceiveBuffer.bLastPacketStart;
-						SendErrorByCode(ecCommunicationCRCError);
-					}
-				}
-				else
-				{
-					udtUartReceiveBuffer.bWrite = udtUartReceiveBuffer.bLastPacketStart;
-					SendErrorByCode(ecCommunicationCRCError);
-				}
-			}
-			else /* No CRC check */
-			{
-				udtUartReceiveBuffer.bLastPacketStart=udtUartReceiveBuffer.bWrite;
-				udtUartReceiveBuffer.xPacketAvailable=TRUE;
-			}
+			udtUartReceiveBuffer.bLastPacketStart=udtUartReceiveBuffer.bWrite;
+			udtUartReceiveBuffer.xPacketAvailable=TRUE;
 		}
 	}
 }

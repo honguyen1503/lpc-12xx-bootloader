@@ -34,7 +34,6 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEAL
 #include "../Support/ErrorHandling.h"
 #include "../Support/uart.h"
 #include "../Support/Timer.h"
-#include "../Support/CRC.h"
 #include "../Main/Parser.h"
 
 #endif /* GLOBALINCLUDES_H_ */

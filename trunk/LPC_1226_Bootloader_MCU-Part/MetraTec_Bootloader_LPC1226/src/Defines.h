@@ -21,6 +21,8 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEAL
 #define DEFINES_H_
 
 #define START_BOOTLOADER_ON_IIII 1
+#define TOTAL_FLASHSIZE 0x18000
+#define USED_UART 0
 
 #include "stdint.h"
 
@@ -63,6 +65,6 @@ typedef struct
 }tFirmwareParamFlash;
 
 extern tBootloaderParamFlash udtBootloaderParamFlash;
-#define FLASHPARAM_FirmwareData ((tFirmwareParamFlash*)(pStartOfApplicationCode+0xC0))
+#define FLASHPARAM_FirmwareData ((tFirmwareParamFlash*)(pStartOfApplicationCode+0x100))
 
 #endif /* DEFINES_H_ */

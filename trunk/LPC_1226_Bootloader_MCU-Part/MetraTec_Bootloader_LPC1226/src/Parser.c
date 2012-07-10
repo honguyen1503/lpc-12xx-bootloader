@@ -32,12 +32,6 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEAL
 #define Command_Write_HW_Name 0x44
 #define Command_Write_HW_Rev 0x45
 
-const u8 const mAES_Key[16]={0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF};	//TODO: Change the key
-u8 mExpandedKey[4 * Nb * (Nr + 1)];
-void InitAES (void)
-{
-	ExpandKey (mAES_Key, mExpandedKey);
-}
 static void decodeApplicationCode(void)
 {
 	u16 i = 0;

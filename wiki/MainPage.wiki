@@ -1,0 +1,5 @@
+#The main page of this project's Wiki
+
+= Introduction =
+
+The main issue at the moment is the missing documentation. This will be addressed in the next couple of weeks. Also, we will create a downloadable package as a ZIP file with all components, so you don't have to use SVN to get the code.

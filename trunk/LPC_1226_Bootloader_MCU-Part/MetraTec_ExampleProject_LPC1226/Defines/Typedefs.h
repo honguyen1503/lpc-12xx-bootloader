@@ -20,6 +20,7 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEAL
 #ifndef TYPEDEFS_H_
 #define TYPEDEFS_H_
 
+/*shortened variable type names to write faster*/
 typedef uint8_t 	u8;
 typedef int8_t 		s8;
 typedef uint16_t 	u16;
@@ -28,9 +29,12 @@ typedef uint32_t 	u32;
 typedef int32_t 	s32;
 typedef uint64_t 	u64;
 typedef int64_t 	s64;
+
+/*defining Boolean type. In case of problems use typedef u8 Bool; #define FALSE 0 #define TRUE 1*/
 typedef enum { FALSE = 0, TRUE  = 1} Bool;
 
-
+/* defines a structure type containing the Bootloader and Hardware paramter. Obviously they should not be changed more than once and only
+ * if the are set to 0xFFs. It is possible to make a application using IAP to update the bootloader but this is not recommended!*/
 typedef	struct
 {
 	const const u8 mBootloaderName[16];

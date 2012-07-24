@@ -20,20 +20,20 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEAL
 #ifndef GLOBALINCLUDES_H_
 #define GLOBALINCLUDES_H_
 
-#include "string.h"
+#include "string.h"			/*standard CRC*/
 
-#include "LPC122x.h"
-#include "core_cm0.h"
-#include "core_cmFunc.h"
-#include "core_cmInstr.h"
+#include "LPC122x.h"		/*hardware abstraction layer from NXP*/
+#include "core_cm0.h"		/*hardware abstraction layer from NXP*/
+#include "core_cmFunc.h"	/*hardware abstraction layer from NXP*/
+#include "core_cmInstr.h"	/*hardware abstraction layer from NXP*/
 
-#include "GlobalDefines.h"
-#include "Typedefs.h"
-#include "GlobalVariables.h"
+#include "GlobalDefines.h"	/*contains some settings and #defines*/
+#include "Typedefs.h"		/*contains all new defined types, mostly structs*/
+#include "GlobalVariables.h"/*Contains the "extern" declaration of global variables*/
 
-#include "../Support/ErrorHandling.h"
-#include "../Support/uart.h"
-#include "../Support/Timer.h"
-#include "../Main/Parser.h"
+#include "../Support/ErrorHandling.h"	/*translates errors to interface*/
+#include "../Support/uart.h"			/*gives UART interface, also support functions to decode and encode data to and from ascii*/
+#include "../Support/Timer.h"			/*gives flexible software timer function (millisecondwise, as much timers as wanted)*/
+#include "../Main/Parser.h"				/*contains the translation from received ascii commands to functions*/
 
 #endif /* GLOBALINCLUDES_H_ */

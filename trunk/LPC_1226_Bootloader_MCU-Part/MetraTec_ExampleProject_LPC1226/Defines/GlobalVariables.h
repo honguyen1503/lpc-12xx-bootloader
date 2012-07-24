@@ -20,13 +20,14 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEAL
 #ifndef GLOBALVARIABLES_H_
 #define GLOBALVARIABLES_H_
 
-tUartSendBuffer udtUartSendBuffer;
-tUartReceiveBuffer udtUartReceiveBuffer;
-tTimerValues udtGlobalFreeTimerValue;	/*The structure containing all global values for the timers*/
-u8 bInterruptDisableCounter;
-extern u8 bMetraTecAvrLib_HighestFuncInUse;
+extern tUartSendBuffer udtUartSendBuffer;		/*contains the Uart transmitter state. Is accessed by transmitter interrupt and UartSendByte/UartSendBuffer*/
+extern tUartReceiveBuffer udtUartReceiveBuffer;	/*contains the Uart receiver state. Is used by receiver interrupt and command parser*/
+extern tTimerValues udtGlobalFreeTimerValue;	/*The structure containing all global values for the timers*/
+extern u8 bInterruptDisableCounter;				/*counts the number of "interrupt disable" calls so the first "interrupt enable" will not overrule the cascaded Disables*/
 
-extern const tFirmwareParamFlash udtFirmwareParamFlash;
-extern tBootloaderParamFlash udtBootloaderParamFlash;
+extern const tFirmwareParamFlash udtFirmwareParamFlash;	/*contains the Firmware Version, Name etc. at a specific adress so it's accessable from bootloader*/
+extern tBootloaderParamFlash udtBootloaderParamFlash;	/*is a local RAM variable containing a COPY of the bootloader Parameter (Name, Version etc)
+ 	 	 	 	 	 	 	 	 	 	 	 	 	 	 filled at the start of main because the bootloader section is not addressable because every
+ 	 	 	 	 	 	 	 	 	 	 	 	 	 	 addressing while in ISR-In-RAM-Mode is redirected to the RAM area*/
 
 #endif /* GLOBALVARIABLES_H_ */

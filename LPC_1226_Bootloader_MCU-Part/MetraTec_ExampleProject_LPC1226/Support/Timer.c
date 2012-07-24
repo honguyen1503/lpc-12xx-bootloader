@@ -19,8 +19,7 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEAL
 
 #include "GlobalIncludes.h"
 
-u8 bMetraTecAvrLib_HighestFuncInUse=0;
-
+tTimerValues udtGlobalFreeTimerValue;			/*The structure containing all global values for the timers*/
 
 void UartReceiveTimeoutFunction(void)
 {
@@ -67,27 +66,12 @@ Bool InitFreeGlobalTimerFunctions(u8 bFunctionNumber, voidfunction udtFunc)
 Bool CallTimedFunction(u8 bFunctionNumber, u32 dwTime)
 {
 	if (dwTime>0x0FFFFFFF) /*So the overflow is recognized it needs to be smaller than half max value. This is much harder, but the value is more than high enough, this contains days*/
-	{
 		return FALSE;
-	}
 
 	if (bFunctionNumber<TIMERNUMBEROFFUNCTIONS)				/*function is defined*/
 	{
 		if (0==dwTime)														/*dwTime==0 means deactivate the function*/
-		{
 			udtGlobalFreeTimerValue.functionClockValue[bFunctionNumber]=0;	/*deactivate it (zero will never occure, see interrupt above)*/
-
-			if (bFunctionNumber==bMetraTecAvrLib_HighestFuncInUse)			/*if the deactivated function is the highest one*/
-			{
-				while (udtGlobalFreeTimerValue.functionClockValue[bFunctionNumber]==0)
-				{
-					if (bFunctionNumber==0)
-						break;
-					bMetraTecAvrLib_HighestFuncInUse--;
-					bFunctionNumber--;
-				}
-			}
-		}
 		else
 		{
 			udtGlobalFreeTimerValue.functionClockValue[bFunctionNumber]=udtGlobalFreeTimerValue.clock+dwTime;	/*execution time is actual time plus the time given*/
@@ -95,15 +79,11 @@ Bool CallTimedFunction(u8 bFunctionNumber, u32 dwTime)
 			{
 				udtGlobalFreeTimerValue.functionClockValue[bFunctionNumber]++;  								/*so add one because zero is unused so there's one number missing*/
 			}
-			if (bFunctionNumber>bMetraTecAvrLib_HighestFuncInUse)
-				bMetraTecAvrLib_HighestFuncInUse=bFunctionNumber;
 		}
 		return TRUE;
 	}
 	else /*bFunctionNumber is to high*/
-	{
 		return FALSE;
-	}
 }
 void SysTick_Handler(void)
 {
@@ -111,7 +91,7 @@ void SysTick_Handler(void)
 	if (udtGlobalFreeTimerValue.clock==0)									/*"jump over" the zero as zero stands for "counter not active"*/
 		udtGlobalFreeTimerValue.clock=1;
 
-	for (u8 i=0;i<=bMetraTecAvrLib_HighestFuncInUse;i++)									/*all defined Timer*/
+	for (u8 i=0;i<TIMERNUMBEROFFUNCTIONS;i++)									/*all defined Timer*/
 	{
 		if (udtGlobalFreeTimerValue.clock==udtGlobalFreeTimerValue.functionClockValue[i])	/*time is off*/
 		{

@@ -32,6 +32,8 @@ __attribute__ ((section(".fwparam"))) const tFirmwareParamFlash udtFirmwareParam
 		0xFFFFFFFF,
 		0xFFFFFFFF
 };
+
+u8 bInterruptDisableCounter=0;
 tBootloaderParamFlash udtBootloaderParamFlash;
 
 int main(void)

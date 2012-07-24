@@ -19,6 +19,8 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEAL
 
 #include "../Defines/GlobalIncludes.h"
 volatile u8 bMaxFifoLevel=0;
+tUartSendBuffer udtUartSendBuffer;
+tUartReceiveBuffer udtUartReceiveBuffer;
 /*
  * moves the pointer, regarding the overflow
  * pVariable is a pointer to an array element value. array[*pVariable] is the form of usage

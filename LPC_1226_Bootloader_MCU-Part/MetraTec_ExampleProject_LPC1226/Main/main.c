@@ -17,20 +17,20 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include <cr_section_macros.h>
-__BSS(RESERVED) char ISR_Buffer[0x100] ; // reserve 0x100 bytes for ISR pointer in RAM
-#include "GlobalIncludes.h"
+#include <cr_section_macros.h>				//defines for CRP
+__BSS(RESERVED) char ISR_Buffer[0x100] ; 	// reserve 0x100 bytes for ISR pointer in RAM
+#include "GlobalIncludes.h"					//include all header files
 
 
 __attribute__ ((section(".fwparam"))) const tFirmwareParamFlash udtFirmwareParamFlash=
 {
-		"DWARF14_N       ",
-		"0002",
-		"DWARF14_N       ",
-		"0100",
-		0xFFFFFFFF,
-		0xFFFFFFFF,
-		0xFFFFFFFF
+		"DWARF14_N       ",		//Firmware Name (16 Bytes)
+		"0002",					//Firmware Revision (4 Bytes)
+		"DWARF14_N       ",		//Hardware requirement name (16 Bytes)
+		"0100",					//Hardware requirement revision (4Bytes)
+		0xFFFFFFFF,				//reserved for firmware size (written by met generator)
+		0xFFFFFFFF,				//reserved for firmware CRC (written by met generator)
+		0xFFFFFFFF				//reserved for firmware CRC (written by bootloader at first start)
 };
 
 u8 bInterruptDisableCounter=0;
@@ -44,11 +44,13 @@ int main(void)
 	memcpy(&udtBootloaderParamFlash,(void*)0x100,sizeof(tBootloaderParamFlash));	//copy from flash now possible because of deactivated remapping
 	LPC_SYSCON->SYSMEMREMAP=0x01;				//Re-Activate ISR in RAM
 	*((u32*)(0x10000000 + 0x1FE4))=0;			//Reset Bootloader Variable
-	bInterruptDisableCounter=0;
-	UARTInit(115200);
+	bInterruptDisableCounter=0;					//reset disable counter (used for nested disable/enables)
+	UARTInit(115200);							//Initializes the Uart0
 	__enable_irq();								//Enable ISR
 
-	InitFreeGlobalTimer();
+	InitFreeGlobalTimer();						//Initializes the software timer
+
+	/*main loop never to leave*/
 	while(1)
 	{
 		if (udtUartReceiveBuffer.xPacketAvailable)

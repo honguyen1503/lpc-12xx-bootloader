@@ -33,8 +33,7 @@
 									<listOptionValue builtIn="false" value="__CODE_RED"/>
 									<listOptionValue builtIn="false" value="__USE_CMSIS=CMSISv2p00_LPC12xx"/>
 									<listOptionValue builtIn="false" value="__USE_ROMDIVIDE"/>
-									<listOptionValue builtIn="false" value="__DISABLE_WATCHDOG"/>
-									<listOptionValue builtIn="false" value="NDEBUG"/>
+									<listOptionValue builtIn="false" value="__ENABLE_WATCHDOG"/>
 								</option>
 								<option id="gnu.c.compiler.option.misc.other.814179763" name="Other flags" superClass="gnu.c.compiler.option.misc.other" value="-c -fmessage-length=0 -fno-builtin -ffunction-sections -fdata-sections" valueType="string"/>
 								<option id="gnu.c.compiler.option.optimization.flags.516560099" name="Other optimization flags" superClass="gnu.c.compiler.option.optimization.flags" value="-Os" valueType="string"/>
@@ -44,6 +43,7 @@
 								<option id="com.crt.advproject.gcc.exe.release.option.optimization.level.513844150" name="Optimization Level" superClass="com.crt.advproject.gcc.exe.release.option.optimization.level" value="gnu.c.optimization.level.size" valueType="enumerated"/>
 								<option id="com.crt.advproject.gcc.exe.release.option.debugging.level.1067097380" name="Debug Level" superClass="com.crt.advproject.gcc.exe.release.option.debugging.level" value="gnu.c.debugging.level.none" valueType="enumerated"/>
 								<option id="com.crt.advproject.c.misc.dialect.1836897652" name="C Dialect" superClass="com.crt.advproject.c.misc.dialect" value="com.crt.advproject.misc.dialect.gnu99" valueType="enumerated"/>
+								<option id="gnu.c.compiler.option.debugging.gprof.1628654252" name="Generate gprof information (-pg)" superClass="gnu.c.compiler.option.debugging.gprof" value="false" valueType="boolean"/>
 								<inputType id="com.crt.advproject.compiler.input.324020946" superClass="com.crt.advproject.compiler.input"/>
 							</tool>
 							<tool id="com.crt.advproject.gas.exe.release.1639965752" name="MCU Assembler" superClass="com.crt.advproject.gas.exe.release">
@@ -70,6 +70,7 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/CMSISv2p00_LPC12xx/Release}&quot;"/>
 								</option>
 								<option id="com.crt.advproject.link.crpenable.9082147" name="Enable Code Read Protect" superClass="com.crt.advproject.link.crpenable" value="true" valueType="boolean"/>
+								<option id="com.crt.advproject.link.gcc.hdrlib.1460052411" name="Use C library" superClass="com.crt.advproject.link.gcc.hdrlib" value="com.crt.advproject.gcc.link.hdrlib.codered.none" valueType="enumerated"/>
 								<inputType id="cdt.managedbuild.tool.gnu.c.linker.input.1433080124" superClass="cdt.managedbuild.tool.gnu.c.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
 									<additionalInput kind="additionalinput" paths="$(LIBS)"/>
@@ -194,6 +195,7 @@
 			</storageModule>
 			<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
 			<storageModule moduleId="org.eclipse.cdt.core.language.mapping"/>
+			<storageModule moduleId="org.eclipse.cdt.internal.ui.text.commentOwnerProjectMappings"/>
 		</cconfiguration>
 	</storageModule>
 	<storageModule moduleId="cdtBuildSystem" version="4.0.0">
@@ -202,11 +204,8 @@
 	<storageModule moduleId="com.crt.config">
 		<projectStorage>&lt;?xml version="1.0" encoding="UTF-8"?&gt;&#13;
 &lt;TargetConfig&gt;&#13;
-&lt;Properties property_0="" property_1="" property_2="" property_3="NXP" property_4="LPC1226/301" property_count="5" version="1"/&gt;&#13;
-&lt;infoList vendor="NXP"&gt;&#13;
-&lt;info chip="LPC1226/301" match_id="0x2660002B,0x3660002B" name="LPC1226/301" stub="crt_emu_lpc11_13_nxp"&gt;&#13;
-&lt;chip&gt;&#13;
-&lt;name&gt;LPC1226/301&lt;/name&gt;&#13;
+&lt;Properties property_0="" property_3="NXP" property_4="LPC1226/301" property_count="5" version="1"/&gt;&#13;
+&lt;infoList vendor="NXP"&gt;&lt;info chip="LPC1226/301" match_id="0x2660002B,0x3660002B" name="LPC1226/301" stub="crt_emu_lpc11_13_nxp"&gt;&lt;chip&gt;&lt;name&gt;LPC1226/301&lt;/name&gt;&#13;
 &lt;family&gt;LPC1200&lt;/family&gt;&#13;
 &lt;vendor&gt;NXP (formerly Philips)&lt;/vendor&gt;&#13;
 &lt;reset board="None" core="Real" sys="Real"/&gt;&#13;
@@ -217,30 +216,29 @@
 &lt;memoryInstance derived_from="Flash" id="MFlash96" location="0x0" size="0x18000"/&gt;&#13;
 &lt;memoryInstance derived_from="RAM" id="RamLoc8" location="0x10000000" size="0x2000"/&gt;&#13;
 &lt;prog_flash blocksz="0x1000" location="0x0" maxprgbuff="0x400" progwithcode="TRUE" size="0x18000"/&gt;&#13;
-&lt;peripheralInstance derived_from="LPC12_SYSCTL" determined="infoFile" id="SYSCTL" location="0x40048000"/&gt;&#13;
-&lt;peripheralInstance derived_from="LPC12_PMU" determined="infoFile" id="PMU" location="0x40038000"/&gt;&#13;
-&lt;peripheralInstance derived_from="CM0_NVIC" determined="infoFile" id="NVIC" location="0xe000e000"/&gt;&#13;
-&lt;peripheralInstance derived_from="CM0_DCR" determined="infoFile" id="DCR" location="0xe000edf0"/&gt;&#13;
-&lt;peripheralInstance derived_from="LPC12_GPIO" determined="infoFile" id="GPIO0" location="0x50000000"/&gt;&#13;
-&lt;peripheralInstance derived_from="LPC12_GPIO" determined="infoFile" id="GPIO1" location="0x50010000"/&gt;&#13;
-&lt;peripheralInstance derived_from="LPC12_GPIO" determined="infoFile" id="GPIO2" location="0x50020000"/&gt;&#13;
-&lt;peripheralInstance derived_from="LPC12_IOCON" determined="infoFile" id="IOCON" location="0x40044000"/&gt;&#13;
-&lt;peripheralInstance derived_from="LPC12_UART_MODEM" determined="infoFile" id="UART0" location="0x40008000"/&gt;&#13;
-&lt;peripheralInstance derived_from="LPC12_UART" determined="infoFile" id="UART1" location="0x4000c000"/&gt;&#13;
-&lt;peripheralInstance derived_from="LPC12_I2C" determined="infoFile" id="I2C0" location="0x40000000"/&gt;&#13;
-&lt;peripheralInstance derived_from="LPC12_SSP" determined="infoFile" id="SSP0" location="0x40040000"/&gt;&#13;
-&lt;peripheralInstance derived_from="LPC12_TIMER16" determined="infoFile" id="TMR160" location="0x40010000"/&gt;&#13;
-&lt;peripheralInstance derived_from="LPC12_TIMER16" determined="infoFile" id="TMR161" location="0x40014000"/&gt;&#13;
-&lt;peripheralInstance derived_from="LPC12_TIMER32" determined="infoFile" id="TIMER0" location="0x40018000"/&gt;&#13;
-&lt;peripheralInstance derived_from="LPC12_TIMER32" determined="infoFile" id="TIMER1" location="0x4001c000"/&gt;&#13;
-&lt;peripheralInstance derived_from="LPC12_WDT" determined="infoFile" id="WDT" location="0x40004000"/&gt;&#13;
-&lt;peripheralInstance derived_from="LPC12_ADC" determined="infoFile" id="ADC" location="0x40020000"/&gt;&#13;
-&lt;peripheralInstance derived_from="LPC12_MICRODMA" determined="infoFile" id="MICRODMA" location="0x4004c000"/&gt;&#13;
-&lt;peripheralInstance derived_from="LPC12_RTC" determined="infoFile" id="RTC" location="0x40050000"/&gt;&#13;
-&lt;peripheralInstance derived_from="LPC12_COMP" determined="infoFile" id="COMP" location="0x40054000"/&gt;&#13;
+&lt;peripheralInstance derived_from="LPC12_SYSCTL" id="SYSCTL" location="0x40048000"/&gt;&#13;
+&lt;peripheralInstance derived_from="LPC12_PMU" id="PMU" location="0x40038000"/&gt;&#13;
+&lt;peripheralInstance derived_from="CM0_NVIC" id="NVIC" location="0xe000e000"/&gt;&#13;
+&lt;peripheralInstance derived_from="CM0_DCR" id="DCR" location="0xe000edf0"/&gt;&#13;
+&lt;peripheralInstance derived_from="LPC12_GPIO" id="GPIO0" location="0x50000000"/&gt;&#13;
+&lt;peripheralInstance derived_from="LPC12_GPIO" id="GPIO1" location="0x50010000"/&gt;&#13;
+&lt;peripheralInstance derived_from="LPC12_GPIO" id="GPIO2" location="0x50020000"/&gt;&#13;
+&lt;peripheralInstance derived_from="LPC12_IOCON" id="IOCON" location="0x40044000"/&gt;&#13;
+&lt;peripheralInstance derived_from="LPC12_UART_MODEM" id="UART0" location="0x40008000"/&gt;&#13;
+&lt;peripheralInstance derived_from="LPC12_UART" id="UART1" location="0x4000c000"/&gt;&#13;
+&lt;peripheralInstance derived_from="LPC12_I2C" id="I2C0" location="0x40000000"/&gt;&#13;
+&lt;peripheralInstance derived_from="LPC12_SSP" id="SSP0" location="0x40040000"/&gt;&#13;
+&lt;peripheralInstance derived_from="LPC12_TIMER16" id="TMR160" location="0x40010000"/&gt;&#13;
+&lt;peripheralInstance derived_from="LPC12_TIMER16" id="TMR161" location="0x40014000"/&gt;&#13;
+&lt;peripheralInstance derived_from="LPC12_TIMER32" id="TIMER0" location="0x40018000"/&gt;&#13;
+&lt;peripheralInstance derived_from="LPC12_TIMER32" id="TIMER1" location="0x4001c000"/&gt;&#13;
+&lt;peripheralInstance derived_from="LPC12_WDT" id="WDT" location="0x40004000"/&gt;&#13;
+&lt;peripheralInstance derived_from="LPC12_ADC" id="ADC" location="0x40020000"/&gt;&#13;
+&lt;peripheralInstance derived_from="LPC12_MICRODMA" id="MICRODMA" location="0x4004c000"/&gt;&#13;
+&lt;peripheralInstance derived_from="LPC12_RTC" id="RTC" location="0x40050000"/&gt;&#13;
+&lt;peripheralInstance derived_from="LPC12_COMP" id="COMP" location="0x40054000"/&gt;&#13;
 &lt;/chip&gt;&#13;
-&lt;processor&gt;&#13;
-&lt;name gcc_name="cortex-m0"&gt;Cortex-M0&lt;/name&gt;&#13;
+&lt;processor&gt;&lt;name gcc_name="cortex-m0"&gt;Cortex-M0&lt;/name&gt;&#13;
 &lt;family&gt;Cortex-M&lt;/family&gt;&#13;
 &lt;/processor&gt;&#13;
 &lt;link href="nxp_lpc12_peripheral.xme" show="embed" type="simple"/&gt;&#13;

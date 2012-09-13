@@ -34,19 +34,49 @@ u8 bInterruptDisableCounter=0;
 __attribute__ ((section(".btlparam"))) tBootloaderParamFlash udtBootloaderParamFlash=
 {
 	"LPC1226_8kB     ",
-	"0010",
+	"0100",
 	{0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF},
 	{0xFF,0xFF,0xFF,0xFF},
 	{0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF}
 };
 
+#define WDT_RESET() do{DISABLE_GLOBAL_IRQ();LPC_WWDT->FEED=0xAA;LPC_WWDT->FEED=0x55;ENABLE_GLOBAL_IRQ();}while(0)
+void initWatchDog(u32 Time_ms)
+{
+	LPC_SYSCON->PDRUNCFG &= ~(0x1<<0);
+	LPC_SYSCON->SYSAHBCLKCTRL |= (1<<15);
+
+	LPC_WWDT->CLKSEL=0;
+	LPC_WWDT->TC=Time_ms*12000/4;
+	LPC_WWDT->MOD |= 1;
+
+	WDT_RESET();
+}
+
+
+
 int main(void)
 {
-	LPC_SYSCON->SYSAHBCLKCTRL |= 0xE001005FUL;	//set system control variable
+	DISABLE_GLOBAL_IRQ();
+
+	SystemInit();
 	LPC_SYSCON->SYSMEMREMAP=0x02;				//set Interrupt Service Routines to Flash (address 0x00000000)
+	LPC_SYSCON->SYSAHBCLKCTRL |= 0xE001005FUL;	//set system control variable
+
+	initWatchDog(10000);
+
+	if (LPC_SYSCON->BODCTRL!=0x13)
+		LPC_SYSCON->BODCTRL=0x13;
+	__enable_irq();
+	bInterruptDisableCounter=0;
+
 
 	InitCRC();
 	SysTick_Config(SystemCoreClock / 1000);		//set systick to 1ms
+	__disable_irq();
+	UARTInit(115200);							//initializes Uart to 115200Baud
+	bInterruptDisableCounter=0;					//reset counter for nested DISABLE IRQ
+	__enable_irq();								//enable irqs
 
 	Bool xStartBootloader=FALSE;
 	if (
@@ -64,9 +94,6 @@ int main(void)
 	if (FALSE==xStartBootloader)
 	{
 #if START_BOOTLOADER_ON_IIII
-		UARTInit(115200);
-		bInterruptDisableCounter=0;					//reset counter for nested DISABLE IRQ
-		__enable_irq();								//enable irqs
 
 		u32 dwStartUpClock=dwClockValue+50;
 		if (dwStartUpClock<50)
@@ -109,15 +136,21 @@ int main(void)
 		//else the code goes on meaning start bootloader
 #endif
 	}
-	if (!(START_BOOTLOADER_ON_IIII && (FALSE==xStartBootloader)))
+	else
 	{
-		UARTInit(115200);							//initializes Uart to 115200Baud
-		bInterruptDisableCounter=0;					//reset counter for nested DISABLE IRQ
-		__enable_irq();								//enable irqs
-	}
-	ExpandKey (mAES_Key, mExpandedKey);				//initialize the AES by expanding the key
+		if (LPC_SYSCON->SYSRESSTAT&(1U<<3))
+			sendAnswer(0x00,ecBrownOut,NULL,0);
+		else if (LPC_SYSCON->SYSRESSTAT&(1U<<2))
+			sendAnswer(0x00,ecWatchDog,NULL,0);
+		LPC_SYSCON->SYSRESSTAT=0x1F;
 
-	while(1)
-		Parser();
-	return 0;
+
+		ExpandKey (mAES_Key, mExpandedKey);				//initialize the AES by expanding the key
+		while(1)
+		{
+			WDT_RESET();
+			Parser();
+		}
+		return 0;
+	}
 }

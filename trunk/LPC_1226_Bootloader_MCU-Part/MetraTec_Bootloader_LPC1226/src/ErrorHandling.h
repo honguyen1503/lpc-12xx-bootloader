@@ -27,7 +27,9 @@ typedef enum {
 	ecCrcError=0x03,
 	ecInvalidBlockNumber=0x04,
 	ecFlashNotErased=0x07,
-	ecUartTimeout=0x0A
+	ecUartTimeout=0x0A,
+	ecWatchDog=0x3D,
+	ecBrownOut=0xB0
 }tErrorCode;
 
 

@@ -18,19 +18,20 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEAL
 */
 
 #include "includes.h"
-#define Command_Handshake 0x01
-#define Command_WriteCode 0x02
-#define Command_Read_SN 0x03
-#define Command_Read_HW_Name 0x04
-#define Command_Read_HW_Rev 0x05
-#define Command_Read_FW_Name 0x06
-#define Command_Read_FW_Rev 0x07
-#define Command_Erase_Flash 0x0A
-#define Command_Read_BTL_Rev 0x0C
-#define Command_Reset 0x41
-#define Command_Write_SN 0x43
-#define Command_Write_HW_Name 0x44
-#define Command_Write_HW_Rev 0x45
+#define Command_Handshake 		0x01
+#define Command_WriteCode 		0x02
+#define Command_Read_SN 		0x03
+#define Command_Read_HW_Name 	0x04
+#define Command_Read_HW_Rev 	0x05
+#define Command_Read_FW_Name 	0x06
+#define Command_Read_FW_Rev 	0x07
+#define Command_Erase_Flash 	0x0A
+#define Command_Read_BTL_Rev 	0x0C
+#define Command_Read_BTL_Name	0x0D
+#define Command_Reset 			0x41
+#define Command_Write_SN 		0x43
+#define Command_Write_HW_Name 	0x44
+#define Command_Write_HW_Rev 	0x45
 
 static void decodeApplicationCode(void)
 {
@@ -145,6 +146,11 @@ void Parser(void)
 		{
 			sendAnswer(*mInputBytes,eraseAllFlash(),NULL,0);
 			dwBlockCounter_Parser=0;
+			break;
+		}
+		case Command_Read_BTL_Name:
+		{
+			sendAnswer(*mInputBytes,ecSuccess,udtBootloaderParamFlash.mBootloaderName,sizeof(udtBootloaderParamFlash.mBootloaderName));
 			break;
 		}
 		case Command_Read_BTL_Rev:

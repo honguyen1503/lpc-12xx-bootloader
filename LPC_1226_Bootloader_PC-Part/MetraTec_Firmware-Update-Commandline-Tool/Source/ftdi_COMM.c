@@ -58,6 +58,7 @@ Bool ftdiCOMM_Init(int DeviceToOpen)
 	ftStatus=FT_SetTimeouts(ftHandle,1000,1000);
 	ftStatus=FT_ClrDtr(ftHandle);
 	ftStatus=FT_SetDtr(ftHandle);
+	ftStatus=FT_SetLatencyTimer(ftHandle,1);
 	return TRUE;
 }
 

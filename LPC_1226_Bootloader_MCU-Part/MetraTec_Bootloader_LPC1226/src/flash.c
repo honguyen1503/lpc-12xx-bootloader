@@ -19,62 +19,59 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEAL
 
 #include "includes.h"
 
-
+/*This function tries to delete the flash using IAP commands*/
 tErrorCode eraseAllFlash (void)
 {
-	typedef void (*IAP)(u32* command, u32* result);
-	IAP iapFunction=(IAP)IAP_LOCATION;
-	u32 commandPrepare[5]={50,2,23,0,0};
-	u32 resultPrepare[4]={0};
-	u32 commandErase[5]={52,2,23,(SystemCoreClock+500)/1000,0};
-	u32 resultErase[4]={0};
+	typedef void (*IAP)(u32* command, u32* result);					/*define a function type for IAP*/
+	IAP iapFunction=(IAP)IAP_LOCATION;								/*declare a function pointer to IAP location*/
+	u32 commandPrepare[5]={50,2,23,0,0};							/*define the command sequence for 'prepare' IAP command*/
+	u32 resultPrepare[4]={0xFF};									/*define the answer buffer for prepare command*/
+	u32 commandErase[5]={52,2,23,(SystemCoreClock+500)/1000,0};		/*define the command sequence for 'erase' IAP command*/
+	u32 resultErase[4]={0xFF};										/*define the answer buffer for erase command*/
 
-	DISABLE_GLOBAL_IRQ();
-	resultPrepare[0]=0xFF;
-	iapFunction(commandPrepare,resultPrepare);
+	DISABLE_GLOBAL_IRQ();											/*disable interrupt so nothing can disturb the IAP*/
+	iapFunction(commandPrepare,resultPrepare);						/*start prepare command*/
+	ENABLE_GLOBAL_IRQ();											/*when done allow interrupts again*/
 
-	ENABLE_GLOBAL_IRQ();
-	if (resultPrepare[0]!=0)
-		return ecFailure;
-	DISABLE_GLOBAL_IRQ();
-	iapFunction(commandErase,resultErase);
-	ENABLE_GLOBAL_IRQ();
+	if (resultPrepare[0]!=0)										/*check if successful*/
+		return ecFailure;											/*if not: sende error*/
 
-	if (resultErase[0]!=0)
-		return ecFailure;
-	return ecSuccess;
+	DISABLE_GLOBAL_IRQ();											/*disable interrupt so nothing can disturb the IAP*/
+	iapFunction(commandErase,resultErase);							/*start erase command*/
+	ENABLE_GLOBAL_IRQ();											/*when done allow interrupts again*/
+
+	if (resultErase[0]!=0)											/*check if successful*/
+		return ecFailure;											/*if not: sende error*/
+	return ecSuccess;										/*else everything worked fine*/
 }
 
+/* write data to flash using IAP. The area should be free (see erase flash)*/
 tErrorCode writeFlash(u8* mBuffer, u32 dwLength, u8* pTargetArea)
 {
 	if (dwLength==0)
 		return ecSuccess;
 
-	typedef void (*IAP)(u32* command, u32* result);
-	IAP iapFunction=(IAP)IAP_LOCATION;
+	typedef void (*IAP)(u32* command, u32* result);					/*define a function type for IAP*/
+	IAP iapFunction=(IAP)IAP_LOCATION;								/*declare a function pointer to IAP location*/
 
-	u32 commandPrepare[5]={50,((u32)(pTargetArea))>>12,((u32)(pTargetArea))>>12};
-	u32 resultPrepare[4]={0};
+	u32 commandPrepare[5]={50,((u32)(pTargetArea))>>12,((u32)(pTargetArea))>>12};	/*define the command sequence for 'prepare' IAP command*/
+	u32 resultPrepare[4]={0xFF};									/*define the answer buffer for prepare command*/
 
-	u32 commandCopy[5]={51,(u32)pTargetArea,(u32)mBuffer,dwLength,(SystemCoreClock+500)/1000};
-	u32 resultCopy[4]={0};
+	u32 commandCopy[5]={51,(u32)pTargetArea,(u32)mBuffer,dwLength,(SystemCoreClock+500)/1000};	/*define the command sequence for 'copy' IAP command*/
+	u32 resultCopy[4]={0};											/*define the answer buffer for copy command*/
 
-	DISABLE_GLOBAL_IRQ();
-	resultPrepare[0]=0xFF;
-	iapFunction(commandPrepare,resultPrepare);
-	ENABLE_GLOBAL_IRQ();
+	DISABLE_GLOBAL_IRQ();											/*disable interrupt so nothing can disturb the IAP*/
+	iapFunction(commandPrepare,resultPrepare);						/*start prepare command*/
+	ENABLE_GLOBAL_IRQ();											/*when done allow interrupts again*/
 
-	if (resultPrepare[0]!=0)
-		return ecFailure;
+	if (resultPrepare[0]!=0)										/*check if successful*/
+		return ecFailure;											/*if not: sende error*/
 
-	DISABLE_GLOBAL_IRQ();
-	resultCopy[0]=0xFF;
-	iapFunction(commandCopy,resultCopy);
+	DISABLE_GLOBAL_IRQ();											/*disable interrupt so nothing can disturb the IAP*/
+	iapFunction(commandCopy,resultCopy);							/*start copy command*/
+	ENABLE_GLOBAL_IRQ();											/*when done allow interrupts again*/
 
-	ENABLE_GLOBAL_IRQ();
-
-	if (resultCopy[0]!=0)
-		return ecFailure;
-
-	return ecSuccess;
+	if (resultCopy[0]!=0)											/*check if successful*/
+		return ecFailure;											/*if not: sende error*/
+	return ecSuccess;										/*else everything worked fine*/
 }

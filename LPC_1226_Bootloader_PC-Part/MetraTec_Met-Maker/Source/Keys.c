@@ -7,6 +7,6 @@
 
 #include "GlobalIncludes.h"
 
-const u8 const mAES_Key[16]={0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF};	//TODO: Change the key
-const u8 Key[18] = {"MetraTecBootloader"};	//TODO: change the Key
+const u8 const mAES_Key[16]= KEY_AES;
+const u8 Key[18] = KEY_XOR;	//TODO: change the Key
 u8 mExpandedKey[4 * Nb * (Nr + 1)];

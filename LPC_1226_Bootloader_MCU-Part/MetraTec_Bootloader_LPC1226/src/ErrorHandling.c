@@ -20,24 +20,25 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEAL
 #include "includes.h"
 
 
+/*this sends all types of answer, builds the frame for this*/
 void sendAnswer(u8 bCommand, const tErrorCode eError, const u8* const pAnswerParameter, const u32 dwParameterLength)
 {
-	u16 wCrc=0xFFFF;
-	bCommand|=0x80;
-	GetCRC_CCITT(CRCMODE_UARTCOMM_EXCL_END,&bCommand,1,&wCrc);
-	UartSendByte(bCommand);
-	if (dwParameterLength==0||pAnswerParameter==NULL)
+	u16 wCrc=0xFFFF;												/*start crc value*/
+	bCommand|=0x80;													/*take the command and add the bit to show the command the answer belongs to*/
+	GetCRC_CCITT(CRCMODE_UARTCOMM_EXCL_END,&bCommand,1,&wCrc);		/*add command to crc*/
+	UartSendByte(bCommand);											/*send byte 1*/
+	if (dwParameterLength==0||pAnswerParameter==NULL)				/*if there is nothing more to send than the error code*/
 	{
-		GetCRC_CCITT(CRCMODE_UARTCOMM_INCL_END,&eError,1,&wCrc);
-		UartSendByte(eError);
+		GetCRC_CCITT(CRCMODE_UARTCOMM_INCL_END,&eError,1,&wCrc);	/*add the error code to crc*/
+		UartSendByte(eError);										/*and send the error code*/
 	}
 	else
 	{
-		GetCRC_CCITT(CRCMODE_UARTCOMM_EXCL_END,&eError,1,&wCrc);
-		UartSendByte(eError);
-		GetCRC_CCITT(CRCMODE_UARTCOMM_INCL_END,pAnswerParameter,dwParameterLength,&wCrc);
-		UartSendBuffer(pAnswerParameter,dwParameterLength);
+		GetCRC_CCITT(CRCMODE_UARTCOMM_EXCL_END,&eError,1,&wCrc);	/*add the error code to crc*/
+		UartSendByte(eError);										/*and send the error code*/
+		GetCRC_CCITT(CRCMODE_UARTCOMM_INCL_END,pAnswerParameter,dwParameterLength,&wCrc);	/*also add the data to send (for read commands)*/
+		UartSendBuffer(pAnswerParameter,dwParameterLength);			/*and send the data*/
 	}
-	UartSendByte(wCrc);
+	UartSendByte(wCrc);												/*send the crc*/
 	UartSendByte(wCrc>>8);
 }

@@ -49,6 +49,7 @@ extern "C" {
 // will be called by startup code rather than in application's main()
 #if defined (__USE_CMSIS)
 #include "LPC122x.h"
+#include "system_LPC122x.h"
 #endif
 
 // Patch the AEABI integer divide functions to use MCU's romdivide library

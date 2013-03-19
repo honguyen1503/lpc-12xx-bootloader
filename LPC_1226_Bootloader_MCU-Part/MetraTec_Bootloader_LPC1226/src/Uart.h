@@ -46,6 +46,7 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEAL
 extern volatile u32 dwUartRxTimeoutClock;
 extern volatile u32 dwNumberOfInputByte;
 extern volatile u8 mInputBytes[300];
+extern u32 dwCommandReceiveTimeout;
 
 #define CRCMODE_UARTCOMM_INCL_END 5
 #define CRCMODE_UARTCOMM_EXCL_END 1

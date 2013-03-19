@@ -8,6 +8,7 @@
 #ifndef GLOBALINCLUDES_H_
 #define GLOBALINCLUDES_H_
 
+#include "../../../Passwords.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include "stdint.h"

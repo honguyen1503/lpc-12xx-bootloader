@@ -22,6 +22,8 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEAL
 volatile u32 dwUartRxTimeoutClock=0;
 volatile u32 dwNumberOfInputByte=0;
 volatile u8 mInputBytes[300]={0};
+u32 dwCommandReceiveTimeout=5;
+
 #if (USED_UART!=1)
 volatile u8 bMaxFifoLevel=0;
 #endif
@@ -173,8 +175,8 @@ void ISR_UartRX (void)
 {
 	mInputBytes[dwNumberOfInputByte] = LPC_UART0->RBR;	/*get the byte */
 	dwNumberOfInputByte++;
-	dwUartRxTimeoutClock=dwClockValue+5;
-	if (dwUartRxTimeoutClock<5)
+	dwUartRxTimeoutClock=dwClockValue+dwCommandReceiveTimeout;
+	if (dwUartRxTimeoutClock<dwCommandReceiveTimeout)
 		dwUartRxTimeoutClock++;
 }
 #endif

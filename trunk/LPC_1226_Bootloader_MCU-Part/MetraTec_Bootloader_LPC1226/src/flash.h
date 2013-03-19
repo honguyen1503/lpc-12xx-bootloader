@@ -20,15 +20,11 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEAL
 #ifndef FLASHPARAM_H_
 #define FLASHPARAM_H_
 
-#define PROGRAMMED_FLAG (0x00018000-4)
 #define IAP_LOCATION 0x1FFF1FF1
-volatile u32 dwProgramBufferLevel;
 #define pStartOfApplicationCode ((u8*)(0x2000))
-extern u8* mBlankBlock[256];
+extern const u8 const mBlankBlock[256];
 
 tErrorCode eraseAllFlash (void);
 tErrorCode writeFlash(u8* mBuffer, u32 dwLength, u8* pTargetArea);
-u8 sendByteFlash(u8 bByte);
-void endFlashing(void);
 
 #endif /* FLASHPARAM_H_ */

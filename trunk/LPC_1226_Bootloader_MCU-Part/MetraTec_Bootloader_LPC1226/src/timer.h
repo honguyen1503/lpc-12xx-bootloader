@@ -20,9 +20,9 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEAL
 #ifndef TIMER_H_
 #define TIMER_H_
 
-extern volatile u32 dwClockValue;
-void delay_ms(u32 dwDelayTime);
-void SysTick_Handler(void);
+extern volatile u32 dwClockValue;	/*a global variable counting the time*/
+void delay_ms(u32 dwDelayTime);		/*returns after the given time in ms*/
+void SysTick_Handler(void);			/*a ISR handler used as base for all timings (it is set to occure every millisecond)*/
 
 
 #endif /* TIMER_H_ */

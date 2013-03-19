@@ -20,6 +20,7 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEAL
 #ifndef INCLUDES_H_
 #define INCLUDES_H_
 
+#include "../../../Passwords.h"
 #include "string.h"
 #include "stdio.h"
 #include "LPC122x.h"

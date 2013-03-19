@@ -18,6 +18,7 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEAL
 */
 
 #include "includes.h"
+/*defining the values of the used commands*/
 #define Command_Handshake 		0x01
 #define Command_WriteCode 		0x02
 #define Command_Read_SN 		0x03
@@ -28,6 +29,7 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEAL
 #define Command_Erase_Flash 	0x0A
 #define Command_Read_BTL_Rev 	0x0C
 #define Command_Read_BTL_Name	0x0D
+#define Command_SetCommandReceiveTimeout 0x10
 #define Command_Reset 			0x41
 #define Command_Write_SN 		0x43
 #define Command_Write_HW_Name 	0x44
@@ -36,28 +38,27 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEAL
 static void decodeApplicationCode(void)
 {
 	u16 i = 0;
-	static unsigned char p = 0;
-	const u8 Key[18] = {"MetraTecBootloader"};	//TODO: change the Key
+	static unsigned char p = 0;		/*counter*/
+	const u8 Key[18] = KEY_XOR;		/*external key is loaded here from passwords.h*/
 
 	//XOR
-	for(i = 0; i < 256; i++)
+	for(i = 0; i < 256; i++)			/*for a data block (256 byte)*/
 	{
-		*(mProgramBuffer+i) ^= Key[p];
-		p++;
-		if(p >= 18)
+		*(mProgramBuffer+i) ^= Key[p];	/*XOR with the XOR-Key*/
+		p++;							/*add to pointer*/
+		if(p >= 18)						/*close the ring*/
 		  p = 0;
 	}
 
-	//Aes
-
-	for (u16 i=0;i<256;i+=16)
+	/*Aes*/
+	for (u16 i=0;i<256;i+=16)			/*  16*16 = 256 Bytes 16 Bytes =128 bit (for AES 128) */
 		AesDecrypt (mProgramBuffer+i, mExpandedKey, mProgramBuffer+i);
 }
 
 void Parser(void)
 {
-	static u32 dwBlockCounter_Parser=0;
-	const u8 const mBlankBlock[256]={
+	static u32 dwBlockCounter_Parser=0;	/*counts how many blocks are already written so no wrong block will be loaded*/
+	const u8 const mBlankBlock[256]={	/*just a blank block to blank check the data area*/
 			0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
 			0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
 			0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
@@ -68,61 +69,64 @@ void Parser(void)
 			0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
 	};
 
-	if (dwNumberOfInputByte && dwUartRxTimeoutClock==0)
+	if (dwNumberOfInputByte && dwUartRxTimeoutClock==0)		/*if there is some data AND the clock is up (timout) */
 	{
-		u32 dwParsingLength=dwNumberOfInputByte; //so the
+		u32 dwParsingLength=dwNumberOfInputByte; 			/*copy data length*/
 
-		if(dwParsingLength<3)//1Byte Data, 2 Byte CRC
+		if(dwParsingLength<3)								/* at least 1Byte Data, 2 Byte CRC*/
 		{
-			sendAnswer(0x00,ecUartTimeout,NULL,0);
-			dwNumberOfInputByte=0;
-			return;
-		}
-		u16 wRxCrcValue=0xFFFF;
-		GetCRC_CCITT(CRCMODE_UARTCOMM_INCL_END,(u8*)mInputBytes,dwParsingLength-2,&wRxCrcValue);
-		if (memcmp(&wRxCrcValue,((u8*)mInputBytes+dwParsingLength-2),2))
-		{
-			sendAnswer(mInputBytes[0],ecCrcError,NULL,0);
-			dwNumberOfInputByte=0;
+			sendAnswer(0x00,ecUartTimeout,NULL,0);			/*timeout occured but no complete frame*/
+			dwNumberOfInputByte=0;							/*reset*/
 			return;
 		}
 
-		switch (mInputBytes[0])
+		u16 wRxCrcValue=0xFFFF;								/*crc start value*/
+		GetCRC_CCITT(CRCMODE_UARTCOMM_INCL_END,(u8*)mInputBytes,dwParsingLength-2,&wRxCrcValue);	/*compute crc*/
+		if (memcmp(&wRxCrcValue,((u8*)mInputBytes+dwParsingLength-2),2))							/*compare the crc*/
+		{
+			sendAnswer(mInputBytes[0],ecCrcError,NULL,0);				/*send error*/
+			dwNumberOfInputByte=0;										/*reset*/
+			return;
+		}
+
+		switch (mInputBytes[0])									/*first byte contains the command byte*/
 		{
 		case Command_Handshake:
-			sendAnswer(*mInputBytes,ecSuccess,NULL,0);
+			sendAnswer(*mInputBytes,ecSuccess,NULL,0);			/*just send acknowledge, thats all handshake does*/
 			break;
-		case Command_WriteCode:
+		case Command_WriteCode:									/*write application code data to flash*/
 		{
-			if (dwParsingLength<(1+1+256+2))
+			if (dwParsingLength!=(1+2+256+2))					/*command byte + block number (address) + data + crc */
 			{
 				sendAnswer(*mInputBytes,ecUartTimeout,NULL,0);
 				break;
 			}
 			u16 wBlockNumber;
-			memcpy(&wBlockNumber,(u8*)mInputBytes+1,2);
-			if (wBlockNumber!=dwBlockCounter_Parser)
+			memcpy(&wBlockNumber,(u8*)mInputBytes+1,2);			/*get block number*/
+			if (wBlockNumber!=dwBlockCounter_Parser)			/*if block number is not as expected*/
 			{
-				sendAnswer(*mInputBytes,ecInvalidBlockNumber,NULL,0);
+				sendAnswer(*mInputBytes,ecInvalidBlockNumber,NULL,0);	/*return suitable error code*/
 				break;
 			}
-			memcpy(mProgramBuffer,(u8*)mInputBytes+3,256);
-			if (memcmp(mBlankBlock,(u8*)(pStartOfApplicationCode+(wBlockNumber*0x100)),0x100))
+			memcpy(mProgramBuffer,(u8*)mInputBytes+3,256);		/*copy the data, mProgramBuffer is starting at a defined position at  word boundry. Also the program buffer is known to the decode function*/
+			if (memcmp(mBlankBlock,(u8*)(pStartOfApplicationCode+(wBlockNumber*0x100)),0x100))	/*check if the flash area if blank so can be written*/
 			{
 				sendAnswer(*mInputBytes,ecFlashNotErased,NULL,0);
 				break;
 			}
-			decodeApplicationCode();
-			sendAnswer(*mInputBytes,writeFlash(mProgramBuffer,0x100,pStartOfApplicationCode+0x100*wBlockNumber),NULL,0);
-			dwBlockCounter_Parser++;
+			decodeApplicationCode();							/*decode the data*/
+			tErrorCode eError=writeFlash(mProgramBuffer,0x100,pStartOfApplicationCode+0x100*wBlockNumber);
+			sendAnswer(*mInputBytes,eError,NULL,0);				/*send the answer, the error code is the answer of "write flash" function*/
+			if (eError==ecSuccess)
+				dwBlockCounter_Parser++;						/*add one if there was no error*/
 			break;
 		}
-		case Command_Read_SN:
+		case Command_Read_SN:									/*read serial number*/
 		{
 			sendAnswer(*mInputBytes,ecSuccess,udtBootloaderParamFlash.mSerialNumber,sizeof(udtBootloaderParamFlash.mSerialNumber));
 			break;
 		}
-		case Command_Read_HW_Name:
+		case Command_Read_HW_Name:								/*read hardware name*/
 		{
 			sendAnswer(*mInputBytes,ecSuccess,udtBootloaderParamFlash.mHardwareName,sizeof(udtBootloaderParamFlash.mHardwareName));
 			break;
@@ -132,7 +136,7 @@ void Parser(void)
 			sendAnswer(*mInputBytes,ecSuccess,udtBootloaderParamFlash.mHardwareRevision,sizeof(udtBootloaderParamFlash.mHardwareRevision));
 			break;
 		}
-		case Command_Read_FW_Name:
+		case Command_Read_FW_Name:								/*read firmware name (application name) */
 		{
 			sendAnswer(*mInputBytes,ecSuccess,FLASHPARAM_FirmwareData->mFW_Name,sizeof(FLASHPARAM_FirmwareData->mFW_Name));
 			break;
@@ -156,6 +160,16 @@ void Parser(void)
 		case Command_Read_BTL_Rev:
 		{
 			sendAnswer(*mInputBytes,ecSuccess,udtBootloaderParamFlash.mBootloaderRevision,sizeof(udtBootloaderParamFlash.mBootloaderRevision));
+			break;
+		}
+		case Command_SetCommandReceiveTimeout:
+		{
+			if (dwParsingLength!=1+2+2)
+				sendAnswer(mInputBytes[0],ecUartTimeout,NULL,0);
+			else
+			{
+				dwCommandReceiveTimeout=(mInputBytes[1]<<8)+mInputBytes[2];
+			}
 			break;
 		}
 		case Command_Reset:

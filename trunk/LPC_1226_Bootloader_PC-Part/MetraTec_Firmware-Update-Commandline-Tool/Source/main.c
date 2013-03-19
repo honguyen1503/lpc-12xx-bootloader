@@ -62,10 +62,10 @@ int main(int argc, char *argv[])
 	mCommand[2]=0xA0;
 	do
 	{
-		FT_SetTimeouts(ftHandle,5000,20);
+		FT_SetTimeouts(ftHandle,5000,300);
 		if (ftdiCOMM_WriteCommand(mCommand,3))
 		{
-			iNumberRead=ftdiCOMM_ReadAnswer(mAnswer,sizeof(mAnswer));
+			iNumberRead=ftdiCOMM_ReadAnswer(mAnswer,4);
 //			printf("%i\n",iNumberRead);
 //			for (int i=0;i<iNumberRead;i++)
 //				printf("%02x ",mAnswer[i]);
@@ -81,13 +81,11 @@ int main(int argc, char *argv[])
 		return 0;
 	}while(0);
 
-	FT_SetTimeouts(ftHandle,150,50);
-
 	for (u16 i=0;i<wNumberOfBlocks;i++)
 	{
 		printf("%03i of %03i\n",i,wNumberOfBlocks);
 		if (ftdiCOMM_WriteCommand(mMetData+42+i*261,261))
-			if (4==ftdiCOMM_ReadAnswer(mAnswer,sizeof(mAnswer)))
+			if (4==ftdiCOMM_ReadAnswer(mAnswer,4))
 				if (mAnswer[0]==0x82&&mAnswer[1]==0x00)
 					continue;
 		printf("Write Failed");

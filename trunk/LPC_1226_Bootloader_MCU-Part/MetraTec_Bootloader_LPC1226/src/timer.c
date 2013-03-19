@@ -25,16 +25,16 @@ volatile u32 dwClockValue=1;
 void SysTick_Handler(void)
 {
 	dwClockValue++;										/*count up*/
-	if (dwClockValue==0)
+	if (dwClockValue==0)								/*overflow. Allows "0" to mean "off" on uart timeout*/
 		dwClockValue=1;
-	if(dwUartRxTimeoutClock==dwClockValue)
+	if(dwUartRxTimeoutClock==dwClockValue)				/*uart timeout*/
 		dwUartRxTimeoutClock=0;
 }
 void delay_ms(u32 dwDelayTime)
 {
-	u32 dwDelayBaseTime=dwClockValue;	//get actual time
-	dwDelayBaseTime+=dwDelayTime;
-	if (dwDelayBaseTime<dwDelayTime)
+	u32 dwDelayBaseTime=dwClockValue;					/*get actual time*/
+	dwDelayBaseTime+=dwDelayTime;						/*add delay time*/
+	if (dwDelayBaseTime<dwDelayTime)					/*overflow. Allows "0" to mean "off" on uart timeout*/
 		dwDelayBaseTime++;
-	while (dwClockValue!=dwDelayBaseTime);	//wait until time's up
+	while (dwClockValue!=dwDelayBaseTime);				/*wait until time's up*/
 }

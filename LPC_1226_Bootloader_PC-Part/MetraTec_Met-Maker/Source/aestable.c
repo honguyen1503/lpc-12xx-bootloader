@@ -355,16 +355,17 @@ void AesEncrypt (const u8* const in, u8 *expkey, u8 *out)
 	u8 state[Nb * 4];
 	memcpy (state, in, Nb * 4);
 	AddRoundKey (state, expkey);
-    u8 round = 1;
-	for(; round < Nr + 1; round++ )
+
+	for(u8 round = 1; round < Nr + 1; round++ )
 	{
 		if( round < Nr )
 			MixSubColumns (state);
 		else
 			ShiftRows (state);
 
-		AddRoundKey (state, expkey + round * Nb);
+		AddRoundKey (state, expkey + 4* round * Nb);
 	}
+
 	memcpy (out, state, sizeof(state));
 }
 
@@ -375,12 +376,12 @@ unsigned round;
 
 	memcpy (state, in, sizeof(state));
 
-	AddRoundKey (state, expkey + Nr * Nb);
+	AddRoundKey (state, expkey + 4* Nr * Nb);
 	InvShiftRows(state);
 
 	for( round = Nr; round--; )
 	{
-		AddRoundKey (state, expkey + round * Nb);
+		AddRoundKey (state, expkey + 4* round * Nb);
 		if( round )
 			InvMixSubColumns (state);
 	} 

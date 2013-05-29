@@ -26,5 +26,6 @@ extern const u8 const mBlankBlock[256];
 
 tErrorCode eraseAllFlash (void);
 tErrorCode writeFlash(u8* mBuffer, u32 dwLength, u8* pTargetArea);
+u32 getFlashSizeInByte (void);
 
 #endif /* FLASHPARAM_H_ */

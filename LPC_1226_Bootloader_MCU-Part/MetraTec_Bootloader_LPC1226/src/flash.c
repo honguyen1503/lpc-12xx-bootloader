@@ -19,14 +19,35 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEAL
 
 #include "includes.h"
 
+u32 getFlashSizeInByte (void)
+{
+	switch (LPC_SYSCON->DEVICE_ID)
+	{
+		case 0x3670002B:	//1227
+			return 128*1024;
+		case 0x3660002B:	//1226
+			return 96*1024;
+		case 0x3652002B:	//1225 /321
+			return 80*1024;
+		case 0x3650002B:	//1225 /301
+			return 64*1024;
+		case 0x3642C02B:	//1224 /121
+			return 48*1024;
+		case 0x3640C02B:	//1224 /101
+			return 32*1024;
+		default:
+			return 32*1024;
+	}
+}
+
 /*This function tries to delete the flash using IAP commands*/
 tErrorCode eraseAllFlash (void)
 {
 	typedef void (*IAP)(u32* command, u32* result);					/*define a function type for IAP*/
 	IAP iapFunction=(IAP)IAP_LOCATION;								/*declare a function pointer to IAP location*/
-	u32 commandPrepare[5]={50,2,23,0,0};							/*define the command sequence for 'prepare' IAP command*/
+	u32 commandPrepare[5]={50,BOOTLOADER_FLASHSIZE>>12,((getFlashSizeInByte())>>12)-1,0,0};							/*define the command sequence for 'prepare' IAP command*/
 	u32 resultPrepare[4]={0xFF};									/*define the answer buffer for prepare command*/
-	u32 commandErase[5]={52,2,23,(SystemCoreClock+500)/1000,0};		/*define the command sequence for 'erase' IAP command*/
+	u32 commandErase[5]={52,BOOTLOADER_FLASHSIZE>>12,((getFlashSizeInByte())>>12)-1,(SystemCoreClock+500)/1000,0};		/*define the command sequence for 'erase' IAP command*/
 	u32 resultErase[4]={0xFF};										/*define the answer buffer for erase command*/
 
 	DISABLE_GLOBAL_IRQ();											/*disable interrupt so nothing can disturb the IAP*/
@@ -65,13 +86,13 @@ tErrorCode writeFlash(u8* mBuffer, u32 dwLength, u8* pTargetArea)
 	ENABLE_GLOBAL_IRQ();											/*when done allow interrupts again*/
 
 	if (resultPrepare[0]!=0)										/*check if successful*/
-		return ecFailure;											/*if not: sende error*/
+		return ecFailure;											/*if not: send error*/
 
 	DISABLE_GLOBAL_IRQ();											/*disable interrupt so nothing can disturb the IAP*/
 	iapFunction(commandCopy,resultCopy);							/*start copy command*/
 	ENABLE_GLOBAL_IRQ();											/*when done allow interrupts again*/
 
 	if (resultCopy[0]!=0)											/*check if successful*/
-		return ecFailure;											/*if not: sende error*/
+		return ecFailure;											/*if not: send error*/
 	return ecSuccess;										/*else everything worked fine*/
 }

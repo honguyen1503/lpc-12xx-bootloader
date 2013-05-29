@@ -22,7 +22,7 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEAL
 volatile u32 dwUartRxTimeoutClock=0;
 volatile u32 dwNumberOfInputByte=0;
 volatile u8 mInputBytes[300]={0};
-u32 dwCommandReceiveTimeout=5;
+u32 dwCommandReceiveTimeout=50;
 
 #if (USED_UART!=1)
 volatile u8 bMaxFifoLevel=0;

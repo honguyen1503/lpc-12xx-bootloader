@@ -80,7 +80,6 @@ Bool checkFirmwareCrc(void)
 //		delay_us(10000);	//TODO: WHY IS THIS DELAY NEEDED?!?
 //		__disable_irq();
 
-
 		/*try again, same check as at the start*/
 		if (FLASHPARAM_FirmwareData->dwFirmwareCrcInMet==FLASHPARAM_FirmwareData->dwFirmwareCrcOnMcu)
 			return TRUE;

@@ -11,6 +11,6 @@
 extern FT_HANDLE ftHandle;
 Bool ftdiCOMM_Init(int DeviceToOpen);
 Bool ftdiCOMM_WriteCommand(u8* mSendData, u32 dwLength);
-u32 ftdiCOMM_ReadAnswer(u8* mRecvData, u32 dwMaxLength);
+s32 ftdiCOMM_ReadAnswer(u8* mRecvData, u32 dwMaxLength);
 
 #endif /* FTDI_COMM_H_ */

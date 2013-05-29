@@ -65,17 +65,19 @@ int main(int argc, char *argv[])
 		if (ftdiCOMM_WriteCommand(&bDeleteCommand,1))
 		{
 			iNumberRead=ftdiCOMM_ReadAnswer(mAnswer,50);
-//			printf("%i\n",iNumberRead);
-//			for (int i=0;i<iNumberRead;i++)
-//				printf("%02x ",mAnswer[i]);
-//			printf("\n");
 			if (2==iNumberRead)
 			{
 				if (mAnswer[0]==0x8A || mAnswer[1]==0x00)
 					continue;
+				else
+					printf("Error Read Write Answer %2X %2X\n", mAnswer[0],mAnswer[1]);
+			}
+			else
+			{
+				printf("Wrong Answer Length\n");
 			}
 		}
-		printf("Erase Failed");
+		printf("Erase Failed\n");
 		system("Pause");
 		FT_Close(ftHandle);
 		return 0;
@@ -85,9 +87,19 @@ int main(int argc, char *argv[])
 	{
 		printf("%03i of %03i\n",i,wNumberOfBlocks);
 		if (ftdiCOMM_WriteCommand(mMetData+42+i*259,259))
+		{
 			if (2==ftdiCOMM_ReadAnswer(mAnswer,50))
+			{
 				if (mAnswer[0]==0x82&&mAnswer[1]==0x00)
 					continue;
+				else
+					printf("Error Wrong Write Answer %2X %2X\n", mAnswer[0],mAnswer[1]);
+			}
+			else
+				printf("Wrong Answer Length\n");
+		}
+		else
+			printf("Write Command returned false\n");
 		printf("Write Failed");
 		system("Pause");
 		FT_Close(ftHandle);

@@ -24,9 +24,9 @@ __BSS(RESERVED) char ISR_Buffer[0x100] ; 	// reserve 0x100 bytes for ISR pointer
 
 __attribute__ ((section(".fwparam"))) const tFirmwareParamFlash udtFirmwareParamFlash=
 {
-		"DWARF14_N       ",		//Firmware Name (16 Bytes)
-		"0002",					//Firmware Revision (4 Bytes)
-		"DWARF14_N       ",		//Hardware requirement name (16 Bytes)
+		"ExampleProjectFW",		//Firmware Name (16 Bytes)
+		"0101",					//Firmware Revision (4 Bytes)
+		"ExampleProjectHW",		//Hardware requirement name (16 Bytes)
 		"0100",					//Hardware requirement revision (4Bytes)
 		0xFFFFFFFF,				//reserved for firmware size (written by met generator)
 		0xFFFFFFFF,				//reserved for firmware CRC (written by met generator)
@@ -49,6 +49,12 @@ int main(void)
 	__enable_irq();								//Enable ISR
 
 	InitFreeGlobalTimer();						//Initializes the software timer
+
+	if (LPC_SYSCON->SYSRESSTAT&(1U<<3))			/*brown out*/
+		SendErrorByCode(ecBrownOutDetected);
+	else if (LPC_SYSCON->SYSRESSTAT&(1U<<2))	/*watchdog*/
+		SendErrorByCode(ecWatchdogOccured);
+	LPC_SYSCON->SYSRESSTAT=0x1F;				/*reset flags*/
 
 	/*main loop never to leave*/
 	while(1)

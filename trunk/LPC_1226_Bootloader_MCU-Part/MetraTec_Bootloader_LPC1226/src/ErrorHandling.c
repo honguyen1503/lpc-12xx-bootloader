@@ -24,6 +24,11 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEAL
 void sendAnswer(u8 bCommand, const tErrorCode eError, const u8* const pAnswerParameter, const u32 dwParameterLength)
 {
 	u16 wCrc=0xFFFF;												/*start crc value*/
+
+	u8 mLength[2]={(dwParameterLength+2)>>8,(dwParameterLength+2)};
+	UartSendBuffer(mLength,2);
+	GetCRC_CCITT(CRCMODE_UARTCOMM_EXCL_END,mLength,2,&wCrc);
+
 	bCommand|=0x80;													/*take the command and add the bit to show the command the answer belongs to*/
 	GetCRC_CCITT(CRCMODE_UARTCOMM_EXCL_END,&bCommand,1,&wCrc);		/*add command to crc*/
 	UartSendByte(bCommand);											/*send byte 1*/
@@ -39,6 +44,6 @@ void sendAnswer(u8 bCommand, const tErrorCode eError, const u8* const pAnswerPar
 		GetCRC_CCITT(CRCMODE_UARTCOMM_INCL_END,pAnswerParameter,dwParameterLength,&wCrc);	/*also add the data to send (for read commands)*/
 		UartSendBuffer(pAnswerParameter,dwParameterLength);			/*and send the data*/
 	}
-	UartSendByte(wCrc);												/*send the crc*/
-	UartSendByte(wCrc>>8);
+	UartSendByte(wCrc>>8);												/*send the crc*/
+	UartSendByte(wCrc);
 }

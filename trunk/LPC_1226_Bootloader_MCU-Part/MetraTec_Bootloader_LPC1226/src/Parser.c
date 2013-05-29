@@ -26,6 +26,7 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEAL
 #define Command_Read_HW_Rev 	0x05
 #define Command_Read_FW_Name 	0x06
 #define Command_Read_FW_Rev 	0x07
+#define Command_Read_Flash_Size 0x08
 #define Command_Erase_Flash 	0x0A
 #define Command_Read_BTL_Rev 	0x0C
 #define Command_Read_BTL_Name	0x0D
@@ -58,7 +59,8 @@ static void decodeApplicationCode(void)
 void Parser(void)
 {
 	static u32 dwBlockCounter_Parser=0;	/*counts how many blocks are already written so no wrong block will be loaded*/
-	const u8 const mBlankBlock[256]={	/*just a blank block to blank check the data area*/
+	static u32 dwDataLength=0;
+	static const u8 const mBlankBlock[256]={	/*just a blank block to blank check the data area*/
 			0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
 			0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
 			0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
@@ -69,112 +71,135 @@ void Parser(void)
 			0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,
 	};
 
-	if (dwNumberOfInputByte && dwUartRxTimeoutClock==0)		/*if there is some data AND the clock is up (timout) */
+	if (dwNumberOfInputByte>=4+dwDataLength || (dwUartRxTimeoutClock==0 && dwNumberOfInputByte))		/*if there is some data or the clock is up (timout) */
 	{
-		u32 dwParsingLength=dwNumberOfInputByte; 			/*copy data length*/
-
-		if(dwParsingLength<3)								/* at least 1Byte Data, 2 Byte CRC*/
+		dwDataLength=(mInputBytes[0]<<8)+mInputBytes[1];
+		if (dwDataLength>296 || dwNumberOfInputByte>dwDataLength+4)
 		{
-			sendAnswer(0x00,ecUartTimeout,NULL,0);			/*timeout occured but no complete frame*/
-			dwNumberOfInputByte=0;							/*reset*/
+			sendAnswer(0xFF,ecCrcError,NULL,0);
+			dwNumberOfInputByte=0;
+			dwDataLength=0;
+			return;
+		}
+		if (dwUartRxTimeoutClock==0)
+		{
+			sendAnswer(0xFF,ecUartTimeout,NULL,0);
+			dwNumberOfInputByte=0;
+			dwDataLength=0;
 			return;
 		}
 
-		u16 wRxCrcValue=0xFFFF;								/*crc start value*/
-		GetCRC_CCITT(CRCMODE_UARTCOMM_INCL_END,(u8*)mInputBytes,dwParsingLength-2,&wRxCrcValue);	/*compute crc*/
-		if (memcmp(&wRxCrcValue,((u8*)mInputBytes+dwParsingLength-2),2))							/*compare the crc*/
+		if (dwNumberOfInputByte==dwDataLength+4)
 		{
-			sendAnswer(mInputBytes[0],ecCrcError,NULL,0);				/*send error*/
-			dwNumberOfInputByte=0;										/*reset*/
-			return;
+			u16 wRxCrcValue=0xFFFF;
+			GetCRC_CCITT(CRCMODE_UARTCOMM_INCL_END,(u8*)mInputBytes,dwDataLength+2,&wRxCrcValue);	/*compute crc*/
+			if ((0xFF&(wRxCrcValue>>8))==mInputBytes[dwDataLength+2] && (0xFF&wRxCrcValue)==mInputBytes[dwDataLength+3])
+			{
+				sendAnswer(0xFF,ecCrcError,NULL,0);				/*send error*/
+				dwNumberOfInputByte=0;							/*reset*/
+				dwDataLength=0;
+				return;
+			}
 		}
+		else
+			return;
 
-		switch (mInputBytes[0])									/*first byte contains the command byte*/
+
+		switch (mInputBytes[2])									/*first byte contains the command byte*/
 		{
 		case Command_Handshake:
-			sendAnswer(*mInputBytes,ecSuccess,NULL,0);			/*just send acknowledge, thats all handshake does*/
+			sendAnswer(mInputBytes[2],ecSuccess,NULL,0);			/*just send acknowledge, thats all handshake does*/
 			break;
 		case Command_WriteCode:									/*write application code data to flash*/
 		{
-			if (dwParsingLength!=(1+2+256+2))					/*command byte + block number (address) + data + crc */
+			if (dwDataLength!=(1+2+256))					/*command byte + block number (address) + data */
 			{
-				sendAnswer(*mInputBytes,ecUartTimeout,NULL,0);
+				sendAnswer(mInputBytes[2],ecFailure,NULL,0);
 				break;
 			}
-			u16 wBlockNumber;
-			memcpy(&wBlockNumber,(u8*)mInputBytes+1,2);			/*get block number*/
-			if (wBlockNumber!=dwBlockCounter_Parser)			/*if block number is not as expected*/
+
+			if (dwBlockCounter_Parser*0x100 + 0x100 > getFlashSizeInByte() || memcmp(&dwBlockCounter_Parser,((u8*)mInputBytes)+3,2))		/*if block number is not as expected*/
 			{
-				sendAnswer(*mInputBytes,ecInvalidBlockNumber,NULL,0);	/*return suitable error code*/
+				sendAnswer(mInputBytes[2],ecInvalidBlockNumber,NULL,0);	/*return suitable error code*/
 				break;
 			}
-			memcpy(mProgramBuffer,(u8*)mInputBytes+3,256);		/*copy the data, mProgramBuffer is starting at a defined position at  word boundry. Also the program buffer is known to the decode function*/
-			if (memcmp(mBlankBlock,(u8*)(pStartOfApplicationCode+(wBlockNumber*0x100)),0x100))	/*check if the flash area if blank so can be written*/
-			{
-				sendAnswer(*mInputBytes,ecFlashNotErased,NULL,0);
-				break;
-			}
+
+			memcpy(mProgramBuffer,(u8*)mInputBytes+5,256);		/*copy the data, mProgramBuffer is starting at a defined position at  word boundry. Also the program buffer is known to the decode function*/
+			if (dwBlockCounter_Parser==0)
+				if (memcmp(mBlankBlock,(u8*)(pStartOfApplicationCode),0x100))	/*check if the flash area if blank so can be written*/
+				{
+					sendAnswer(mInputBytes[2],ecFlashNotErased,NULL,0);
+					break;
+				}
 			decodeApplicationCode();							/*decode the data*/
-			tErrorCode eError=writeFlash(mProgramBuffer,0x100,pStartOfApplicationCode+0x100*wBlockNumber);
-			sendAnswer(*mInputBytes,eError,NULL,0);				/*send the answer, the error code is the answer of "write flash" function*/
+			tErrorCode eError=writeFlash(mProgramBuffer,0x100,pStartOfApplicationCode+0x100*dwBlockCounter_Parser);
+			sendAnswer(mInputBytes[2],eError,NULL,0);				/*send the answer, the error code is the answer of "write flash" function*/
 			if (eError==ecSuccess)
 				dwBlockCounter_Parser++;						/*add one if there was no error*/
 			break;
 		}
 		case Command_Read_SN:									/*read serial number*/
 		{
-			sendAnswer(*mInputBytes,ecSuccess,udtBootloaderParamFlash.mSerialNumber,sizeof(udtBootloaderParamFlash.mSerialNumber));
+			sendAnswer(mInputBytes[2],ecSuccess,udtBootloaderParamFlash.mSerialNumber,sizeof(udtBootloaderParamFlash.mSerialNumber));
 			break;
 		}
 		case Command_Read_HW_Name:								/*read hardware name*/
 		{
-			sendAnswer(*mInputBytes,ecSuccess,udtBootloaderParamFlash.mHardwareName,sizeof(udtBootloaderParamFlash.mHardwareName));
+			sendAnswer(mInputBytes[2],ecSuccess,udtBootloaderParamFlash.mHardwareName,sizeof(udtBootloaderParamFlash.mHardwareName));
 			break;
 		}
 		case Command_Read_HW_Rev:
 		{
-			sendAnswer(*mInputBytes,ecSuccess,udtBootloaderParamFlash.mHardwareRevision,sizeof(udtBootloaderParamFlash.mHardwareRevision));
+			sendAnswer(mInputBytes[2],ecSuccess,udtBootloaderParamFlash.mHardwareRevision,sizeof(udtBootloaderParamFlash.mHardwareRevision));
 			break;
 		}
 		case Command_Read_FW_Name:								/*read firmware name (application name) */
 		{
-			sendAnswer(*mInputBytes,ecSuccess,FLASHPARAM_FirmwareData->mFW_Name,sizeof(FLASHPARAM_FirmwareData->mFW_Name));
+			sendAnswer(mInputBytes[2],ecSuccess,FLASHPARAM_FirmwareData->mFW_Name,sizeof(FLASHPARAM_FirmwareData->mFW_Name));
 			break;
 		}
 		case Command_Read_FW_Rev:
 		{
-			sendAnswer(*mInputBytes,ecSuccess,FLASHPARAM_FirmwareData->mFW_Rev,sizeof(FLASHPARAM_FirmwareData->mFW_Rev));
+			sendAnswer(mInputBytes[2],ecSuccess,FLASHPARAM_FirmwareData->mFW_Rev,sizeof(FLASHPARAM_FirmwareData->mFW_Rev));
+			break;
+		}
+		case Command_Read_Flash_Size:
+		{
+			u32 dwFlashSize=getFlashSizeInByte();
+			u8 mBuffer[4]={dwFlashSize>>24,dwFlashSize>>16,dwFlashSize>>8,dwFlashSize};
+			sendAnswer(mInputBytes[2],ecSuccess,mBuffer,4);
 			break;
 		}
 		case Command_Erase_Flash:
 		{
-			sendAnswer(*mInputBytes,eraseAllFlash(),NULL,0);
+			sendAnswer(mInputBytes[2],eraseAllFlash(),NULL,0);
 			dwBlockCounter_Parser=0;
 			break;
 		}
 		case Command_Read_BTL_Name:
 		{
-			sendAnswer(*mInputBytes,ecSuccess,udtBootloaderParamFlash.mBootloaderName,sizeof(udtBootloaderParamFlash.mBootloaderName));
+			sendAnswer(mInputBytes[2],ecSuccess,udtBootloaderParamFlash.mBootloaderName,sizeof(udtBootloaderParamFlash.mBootloaderName));
 			break;
 		}
 		case Command_Read_BTL_Rev:
 		{
-			sendAnswer(*mInputBytes,ecSuccess,udtBootloaderParamFlash.mBootloaderRevision,sizeof(udtBootloaderParamFlash.mBootloaderRevision));
+			sendAnswer(mInputBytes[2],ecSuccess,udtBootloaderParamFlash.mBootloaderRevision,sizeof(udtBootloaderParamFlash.mBootloaderRevision));
 			break;
 		}
 		case Command_SetCommandReceiveTimeout:
 		{
-			if (dwParsingLength!=1+2+2)
-				sendAnswer(mInputBytes[0],ecUartTimeout,NULL,0);
+			if (dwDataLength!=1+2)
+				sendAnswer(mInputBytes[2],ecUartTimeout,NULL,0);
 			else
 			{
-				dwCommandReceiveTimeout=(mInputBytes[1]<<8)+mInputBytes[2];
+				dwCommandReceiveTimeout=(mInputBytes[3]<<8)+mInputBytes[4];
+				sendAnswer(mInputBytes[2],ecSuccess,NULL,0);
 			}
 			break;
 		}
 		case Command_Reset:
 		{
-			sendAnswer(*mInputBytes,ecSuccess,NULL,0);
+			sendAnswer(mInputBytes[2],ecSuccess,NULL,0);
 			delay_ms(5);
 			NVIC_SystemReset();
 			break;
@@ -183,42 +208,43 @@ void Parser(void)
 		{
 			if (memcmp(mBlankBlock,udtBootloaderParamFlash.mSerialNumber,sizeof(udtBootloaderParamFlash.mSerialNumber)))
 			{
-				sendAnswer(*mInputBytes,ecFailure,NULL,0);
+				sendAnswer(mInputBytes[2],ecFailure,NULL,0);
 				break;
 			}
-			memcpy(mProgramBuffer,(u8*)mInputBytes+1,sizeof(udtBootloaderParamFlash.mSerialNumber));
+			memcpy(mProgramBuffer,(u8*)mInputBytes+3,sizeof(udtBootloaderParamFlash.mSerialNumber));
 			tErrorCode eWriteError=writeFlash(mProgramBuffer,sizeof(udtBootloaderParamFlash.mSerialNumber),(u8*)(udtBootloaderParamFlash.mSerialNumber));
-			sendAnswer(*mInputBytes,eWriteError,NULL,0);
+			sendAnswer(mInputBytes[2],eWriteError,NULL,0);
 			break;
 		}
 		case Command_Write_HW_Name:
 		{
 			if (memcmp(mBlankBlock,udtBootloaderParamFlash.mHardwareName,sizeof(udtBootloaderParamFlash.mHardwareName)))
 			{
-				sendAnswer(*mInputBytes,ecFailure,NULL,0);
+				sendAnswer(mInputBytes[2],ecFailure,NULL,0);
 				break;
 			}
-			memcpy(mProgramBuffer,(u8*)mInputBytes+1,sizeof(udtBootloaderParamFlash.mHardwareName));
+			memcpy(mProgramBuffer,(u8*)mInputBytes+3,sizeof(udtBootloaderParamFlash.mHardwareName));
 			tErrorCode eWriteError=writeFlash(mProgramBuffer,sizeof(udtBootloaderParamFlash.mHardwareName),(u8*)(udtBootloaderParamFlash.mHardwareName));
-			sendAnswer(*mInputBytes,eWriteError,NULL,0);
+			sendAnswer(mInputBytes[2],eWriteError,NULL,0);
 			break;
 		}
 		case Command_Write_HW_Rev:
 		{
 			if (memcmp(mBlankBlock,udtBootloaderParamFlash.mHardwareRevision,sizeof(udtBootloaderParamFlash.mHardwareRevision)))
 			{
-				sendAnswer(*mInputBytes,ecFailure,NULL,0);
+				sendAnswer(mInputBytes[2],ecFailure,NULL,0);
 				break;
 			}
-			memcpy(mProgramBuffer,(u8*)mInputBytes+1,sizeof(udtBootloaderParamFlash.mHardwareRevision));
+			memcpy(mProgramBuffer,(u8*)mInputBytes+3,sizeof(udtBootloaderParamFlash.mHardwareRevision));
 			tErrorCode eWriteError=writeFlash(mProgramBuffer,sizeof(udtBootloaderParamFlash.mHardwareRevision),(u8*)(udtBootloaderParamFlash.mHardwareRevision));
-			sendAnswer(*mInputBytes,eWriteError,NULL,0);
+			sendAnswer(mInputBytes[2],eWriteError,NULL,0);
 			break;
 		}
 		default:
-			sendAnswer(mInputBytes[0],ecInvalidCommand,NULL,0);
+			sendAnswer(mInputBytes[2],ecInvalidCommand,NULL,0);
 			break;
 		}
 		dwNumberOfInputByte=0;
+		dwDataLength=0;
 	}
 }

@@ -19,7 +19,7 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEAL
 This file uses code from public domain, see below for the disclaimer:
 // advanced encryption standard
 // author: karl malbrain, malbrain@yahoo.com
-/*
+/ *
 This work, including the source code, documentation
 and related data, is placed into the public domain.
 

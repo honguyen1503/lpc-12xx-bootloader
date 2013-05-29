@@ -33,8 +33,8 @@ u8 bInterruptDisableCounter=0;								/*counts how often __disable_irq is used s
 
 __attribute__ ((section(".btlparam"))) tBootloaderParamFlash udtBootloaderParamFlash=	/*the bootloader versioning and CRC is init here. for positioning see linkscript and section btlparam*/
 {
-	"LPC1226_8kB     ",																	/*Bootloader Name*/
-	"0105",																				/*bootloader version*/
+	"LPC122x_8kB     ",																	/*Bootloader Name*/
+	"0100",																				/*bootloader version*/
 	{0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF},	/*Hardware Name to be set*/
 	{0xFF,0xFF,0xFF,0xFF},																/*Wardware version to be set*/
 	{0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF}	/*Serial number empty, may be set*/
@@ -94,7 +94,7 @@ int main(void)
 			||
 			((*(u32*)(0x10000000 + 0x1FE4))==0xB00410AD)		/*the RAM area reserved for it contains the Bootload flag which means the bootloader was called from application*/
 			||
-			(FLASHPARAM_FirmwareData->dwFirmwareSizeBytes>TOTAL_FLASHSIZE-((u32)(pStartOfApplicationCode)))	/*the code (partly) set in flash is bigger then the free falsh size*/
+			(FLASHPARAM_FirmwareData->dwFirmwareSizeBytes>getFlashSizeInByte()-((u32)(pStartOfApplicationCode)))	/*the code (partly) set in flash is bigger then the free falsh size*/
 		)
 		xStartBootloader=TRUE;
 	else
@@ -118,37 +118,37 @@ int main(void)
 				if (mInputBytes[0]=='i')		/*if it's an 'i' */
 				{
 					UartSendByte('L');			/*answer with 'L' as acknowledge*/
-					delay_ms(10);				/*wait for some time to gie the sender time to stop*/
+					delay_ms(5);				/*wait for some time to gie the sender time to stop*/
 					dwNumberOfInputByte=0;		/*delete all data*/
-					dwStartUpClock=0;			/*reset time so it can be checked (if it's zero the bootloader needs a start*/
+					xStartBootloader=TRUE;
 					break;
 				}
 				else
 					dwNumberOfInputByte=0;		/*if there is anything else on the line just delete everything to minimize the danger of buffer overflow*/
 			}
 		}
-		if (dwStartUpClock)						/*if the bootloader needs no start start application*/
-		{
-#endif
-			__disable_irq();		/*no errors from interrupts*/
-			/* Valid application located in the next sector(s) of flash so execute */
-
-
-			/* Load main stack pointer with application stack pointer initial value,
-			   stored at first location of application area */
-			asm volatile("ldr r0, =0x2000");
-			asm volatile("ldr r0, [r0]");
-			asm volatile("mov sp, r0");
-
-			/* Load program counter with application reset vector address, located at
-			   second word of application area. */
-			asm volatile("ldr r0, =0x2004");
-			asm volatile("ldr r0, [r0]");
-			asm volatile("mov pc, r0");					/*thats all, application code starts now*/
-#if START_BOOTLOADER_ON_IIII
-		}
-#endif
 	}
+	if (FALSE==xStartBootloader)						/*if the bootloader needs no start start application*/
+	{
+#endif
+		__disable_irq();		/*no errors from interrupts*/
+		/* Valid application located in the next sector(s) of flash so execute */
+
+
+		/* Load main stack pointer with application stack pointer initial value,
+		   stored at first location of application area */
+		asm volatile("ldr r0, =0x2000");
+		asm volatile("ldr r0, [r0]");
+		asm volatile("mov sp, r0");
+
+		/* Load program counter with application reset vector address, located at
+		   second word of application area. */
+		asm volatile("ldr r0, =0x2004");
+		asm volatile("ldr r0, [r0]");
+		asm volatile("mov pc, r0");					/*thats all, application code starts now*/
+#if START_BOOTLOADER_ON_IIII
+	}
+#endif
 	else		/*else the code goes on meaning start bootloader*/
 	{
 		if (LPC_SYSCON->SYSRESSTAT&(1U<<3))			/*brown out*/

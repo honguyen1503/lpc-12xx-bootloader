@@ -20,8 +20,8 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEAL
 #ifndef DEFINES_H_
 #define DEFINES_H_
 
-#define START_BOOTLOADER_ON_IIII 0	/* if this is set the bootloader may also be started by sending an 'i' in the matching timeslot. disabled normally */
-#define TOTAL_FLASHSIZE 0x18000		/* Flash size of LPC1226*/
+#define START_BOOTLOADER_ON_IIII 1	/* if this is set the bootloader may also be started by sending an 'i' in the matching timeslot. disabled normally */
+#define BOOTLOADER_FLASHSIZE 0x2000	/* Flash size of Bootloader*/
 #define USED_UART 0					/* The Uart used by bootloader. May be changed depending on the used hardware*/
 
 #include "stdint.h"					/*standard C lib*/

@@ -127,8 +127,10 @@ Bool ftdiCOMM_WriteCommand(u8* mSendData, u32 dwLength)
 	wCrc=GetCRCu8(dwLength,wCrc);
 	for (u32 dwI=0;dwI<dwLength;dwI++)
 		wCrc=GetCRCu8(mSendData[dwI],wCrc);
+	u8 mCrc[2]={wCrc>>8,wCrc};
 
-	ftStatus=FT_Write(ftHandle,(u8*)&wCrc, 2,&Written);
+
+	ftStatus=FT_Write(ftHandle,mCrc, 2,&Written);
 	if (FT_OK!= ftStatus)
 	{
 		printf("Did not write\nError code %ld\n",ftStatus);

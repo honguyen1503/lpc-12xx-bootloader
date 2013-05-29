@@ -34,7 +34,7 @@ u8 bInterruptDisableCounter=0;								/*counts how often __disable_irq is used s
 __attribute__ ((section(".btlparam"))) tBootloaderParamFlash udtBootloaderParamFlash=	/*the bootloader versioning and CRC is init here. for positioning see linkscript and section btlparam*/
 {
 	"LPC122x_8kB     ",																	/*Bootloader Name*/
-	"0100",																				/*bootloader version*/
+	"0101",																				/*bootloader version*/
 	{0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF},	/*Hardware Name to be set*/
 	{0xFF,0xFF,0xFF,0xFF},																/*Wardware version to be set*/
 	{0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF}	/*Serial number empty, may be set*/

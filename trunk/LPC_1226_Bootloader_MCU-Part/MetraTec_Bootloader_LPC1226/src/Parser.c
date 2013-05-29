@@ -73,10 +73,11 @@ void Parser(void)
 
 	if (dwNumberOfInputByte>=4+dwDataLength || (dwUartRxTimeoutClock==0 && dwNumberOfInputByte))		/*if there is some data or the clock is up (timout) */
 	{
-		dwDataLength=(mInputBytes[0]<<8)+mInputBytes[1];
+		if (dwNumberOfInputByte>=2)
+			dwDataLength=(mInputBytes[0]<<8)+mInputBytes[1];
 		if (dwDataLength>296 || dwNumberOfInputByte>dwDataLength+4)
 		{
-			sendAnswer(0xFF,ecCrcError,NULL,0);
+			sendAnswer(0x00,ecCrcError,NULL,0);
 			dwNumberOfInputByte=0;
 			dwDataLength=0;
 			return;
@@ -93,7 +94,7 @@ void Parser(void)
 		{
 			u16 wRxCrcValue=0xFFFF;
 			GetCRC_CCITT(CRCMODE_UARTCOMM_INCL_END,(u8*)mInputBytes,dwDataLength+2,&wRxCrcValue);	/*compute crc*/
-			if ((0xFF&(wRxCrcValue>>8))==mInputBytes[dwDataLength+2] && (0xFF&wRxCrcValue)==mInputBytes[dwDataLength+3])
+			if ((0xFF&(wRxCrcValue>>8))!=mInputBytes[dwDataLength+2] || (0xFF&wRxCrcValue)!=mInputBytes[dwDataLength+3])
 			{
 				sendAnswer(0xFF,ecCrcError,NULL,0);				/*send error*/
 				dwNumberOfInputByte=0;							/*reset*/
